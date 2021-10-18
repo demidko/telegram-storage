@@ -26,7 +26,7 @@ tasks.test {
 }
 publishing {
   publications {
-    create<MavenPublication>("durov") {
+    create<MavenPublication>("channelstorage") {
       from(components["java"])
     }
   }
