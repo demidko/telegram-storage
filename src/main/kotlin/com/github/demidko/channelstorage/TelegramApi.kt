@@ -28,8 +28,7 @@ internal fun Bot.readFilesReferences(channel: ChatId): MutableMap<Any, String> {
   val fileId = getChat(channel).get().description ?: return ConcurrentHashMap()
   val protobuf = downloadFileBytes(fileId) ?: return ConcurrentHashMap()
   return try {
-    val decodedMap = ProtoBuf.decodeFromByteArray<Map<Any, String>>(protobuf)
-    return ConcurrentHashMap(decodedMap)
+    ProtoBuf.decodeFromByteArray<Map<Any, String>>(protobuf).let(::ConcurrentHashMap)
   } catch (e: SerializationException) {
     ConcurrentHashMap()
   }
