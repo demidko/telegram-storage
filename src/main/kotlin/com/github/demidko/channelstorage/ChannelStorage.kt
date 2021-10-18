@@ -33,8 +33,11 @@ class ChannelStorage(private val bot: Bot, private val channel: ChatId) : Closea
    * Shutdown handler to save [fileIdentifiers] to Telegram
    */
   private val onShutdown =
-    Thread { bot.saveFilesReferences(fileIdentifiers, channel) }
-      .apply(getRuntime()::addShutdownHook)
+    Thread {
+      atomicExecutor.submit {
+        bot.saveFilesReferences(fileIdentifiers, channel)
+      }.get()
+    }.apply(getRuntime()::addShutdownHook)
 
   constructor(botToken: String, channelName: String)
     : this(bot { token = botToken }, fromChannelUsername(channelName))
@@ -47,11 +50,9 @@ class ChannelStorage(private val bot: Bot, private val channel: ChatId) : Closea
    * Save [fileIdentifiers] to Telegram and cleanup shutdown hook
    */
   override fun close() {
-    atomicExecutor.submit {
-      onShutdown.run()
-      onShutdown.join()
-      getRuntime().removeShutdownHook(onShutdown)
-    }
+    onShutdown.run()
+    onShutdown.join()
+    getRuntime().removeShutdownHook(onShutdown)
   }
 
   val size get() = fileIdentifiers.size
