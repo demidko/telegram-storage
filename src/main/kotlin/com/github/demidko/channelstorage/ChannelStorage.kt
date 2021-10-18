@@ -12,22 +12,22 @@ import kotlinx.serialization.encodeToByteArray
 import kotlinx.serialization.protobuf.ProtoBuf
 import java.io.Closeable
 import java.lang.Runtime.getRuntime
+import java.util.concurrent.Executors.newSingleThreadExecutor
 
 /**
  * Immutable nosql database in your Telegram channel.
  */
 class ChannelStorage(private val bot: Bot, private val channel: ChatId) : Closeable {
 
-  constructor(botToken: String, channelName: String)
-    : this(bot { token = botToken }, fromChannelUsername(channelName))
-
-  constructor(botToken: String, channelId: Long)
-    : this(bot { token = botToken }, fromId(channelId))
-
   /**
    * Map: your key -> bot file id
    */
   private val fileIdentifiers = bot.readFilesReferences(channel)
+
+  /**
+   * Single thread to safe execution order
+   */
+  private val atomicExecutor = newSingleThreadExecutor()
 
   /**
    * Shutdown handler to save [fileIdentifiers] to Telegram
@@ -36,13 +36,22 @@ class ChannelStorage(private val bot: Bot, private val channel: ChatId) : Closea
     Thread { bot.saveFilesReferences(fileIdentifiers, channel) }
       .apply(getRuntime()::addShutdownHook)
 
+  constructor(botToken: String, channelName: String)
+    : this(bot { token = botToken }, fromChannelUsername(channelName))
+
+  constructor(botToken: String, channelId: Long)
+    : this(bot { token = botToken }, fromId(channelId))
+
+
   /**
    * Save [fileIdentifiers] to Telegram and cleanup shutdown hook
    */
   override fun close() {
-    onShutdown.run()
-    onShutdown.join()
-    getRuntime().removeShutdownHook(onShutdown)
+    atomicExecutor.submit {
+      onShutdown.run()
+      onShutdown.join()
+      getRuntime().removeShutdownHook(onShutdown)
+    }
   }
 
   val size get() = fileIdentifiers.size
@@ -61,7 +70,7 @@ class ChannelStorage(private val bot: Bot, private val channel: ChatId) : Closea
    * @param k key to value
    * @param v see [Telegram Bot API limits](https://core.telegram.org/bots/faq#handling-media)
    */
-  operator fun <K> set(k: K, v: TelegramFile) {
+  operator fun <K> set(k: K, v: TelegramFile) = atomicExecutor.submit {
     fileIdentifiers[k as Any] = bot.sendDocument(channel, v).first?.body()?.result?.document?.fileId!!
   }
 
