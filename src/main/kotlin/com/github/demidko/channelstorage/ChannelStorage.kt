@@ -72,7 +72,8 @@ class ChannelStorage(private val bot: Bot, private val channel: ChatId) : Closea
    * @param v see [Telegram Bot API limits](https://core.telegram.org/bots/faq#handling-media)
    */
   operator fun <K> set(k: K, v: TelegramFile) = atomicExecutor.submit {
-    fileIdentifiers[k as Any] = bot.sendDocument(channel, v).first?.body()?.result?.document?.fileId!!
+    fileIdentifiers[k as Any] =
+      bot.sendDocument(channel, v).first?.body()?.result?.document?.fileId!!
   }
 
   inline operator fun <K, reified V> get(k: K): V? {
