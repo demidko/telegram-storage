@@ -63,7 +63,7 @@ class ChannelStorage(private val bot: Bot, private val channel: ChatId) : Closea
    * @param v see [Telegram Bot API limits](https://core.telegram.org/bots/faq#handling-media)
    */
   inline operator fun <K, reified V> set(k: K, v: V) {
-    this[k] = ByByteArray(ProtoBuf.encodeToByteArray(v))
+    this[k] = ProtoBuf.encodeToByteArray(v).let(::ByByteArray)
   }
 
   /**
@@ -76,18 +76,14 @@ class ChannelStorage(private val bot: Bot, private val channel: ChatId) : Closea
       bot.sendDocument(channel, v).first?.body()?.result?.document?.fileId!!
   }
 
-  inline operator fun <K, reified V> get(k: K): V? {
-    val protobuf = download(k) ?: return null
-    return ProtoBuf.decodeFromByteArray<V>(protobuf)
-  }
+  inline operator fun <K, reified V> get(k: K): V? =
+    download(k)?.let(ProtoBuf::decodeFromByteArray)
 
   /**
    * Download your value
    * @param k your key
    * @return value bytes can be decoded via [decodeFromByteArray] or null
    */
-  fun <K> download(k: K): ByteArray? {
-    val fileId = fileIdentifiers[k as Any] ?: return null
-    return bot.downloadFileBytes(fileId)!!
-  }
+  fun <K> download(k: K) =
+    fileIdentifiers[k as Any]?.let(bot::downloadFileBytes)
 }
