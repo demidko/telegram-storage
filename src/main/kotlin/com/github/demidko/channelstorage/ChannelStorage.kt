@@ -81,7 +81,7 @@ class ChannelStorage(private val bot: Bot, private val channel: ChatId) : Closea
   }
 
   /**
-   * Download yur value
+   * Download your value
    * @param k your key
    * @return value bytes can be decoded via [decodeFromByteArray] or null
    */
