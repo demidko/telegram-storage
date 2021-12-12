@@ -11,8 +11,6 @@ You need Gradle, or Maven, or other build tool.
 
 [![](https://jitpack.io/v/demidko/telegram-storage.svg)](https://jitpack.io/#demidko/telegram-storage)
 
-Also, you need [kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization/) installed.
-
 ## Usage example
 
 ```kotlin

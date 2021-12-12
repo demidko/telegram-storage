@@ -10,7 +10,7 @@ plugins {
 }
 dependencies {
   api("io.github.kotlin-telegram-bot.kotlin-telegram-bot:telegram:6.0.6")
-  implementation("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.3.1")
+  api("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.3.1")
   testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
   testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.25")
   testImplementation("io.mockk:mockk:1.12.1")
