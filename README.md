@@ -1,4 +1,4 @@
-# ChannelStorage
+# Telegram Storage
 
 Telegram cloud client. You need a channel (name or ID) in which your bot has full administrator
 rights.  
@@ -11,16 +11,22 @@ You need Gradle, or Maven, or other build tool.
 
 [![](https://jitpack.io/v/demidko/channelstorage.svg)](https://jitpack.io/#demidko/channelstorage)
 
-## Usage
+## Usage example
 
 ```kotlin
-import com.github.demidko.channelstorage.ChannelStorage
+import kotlinx.serialization.Serializable
+
+import java.lang.System.getenv
+import com.github.demidko.telegram.*
+
+@Serializable
+data class People(val name: String, val address: String)
 
 fun main() {
-  val storage = ChannelStorage("your bot token", "your channel name")
-  storage["your key"] = 5 // save value
-  storage["yor key 2"] = "test" // save value
-  val firstValue: Int? = storage["your key"] // read value
-  val secondValue: String? = storage["your key 2"] // read value
+    val botToken = "Example Telegram Bot API access token"
+    val channelName = "@example_channel_name" // You can also use channel id
+    val storage = TelegramStorage<People>(botToken, channelName)
+    storage["id"] = People("Elon Musk", "Texas")
+    val restoredObject: People = storage["id"] // People("Elon Musk", "Texas")
 }
 ```
