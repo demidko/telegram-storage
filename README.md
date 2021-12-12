@@ -9,7 +9,7 @@ description.
 
 You need Gradle, or Maven, or other build tool.
 
-[![](https://jitpack.io/v/demidko/telegram-storage.svg)](https://jitpack.io/#demidko/channelstorage)
+[![](https://jitpack.io/v/demidko/telegram-storage.svg)](https://jitpack.io/#demidko/telegram-storage)
 
 ## Usage example
 
