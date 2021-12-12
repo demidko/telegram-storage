@@ -1,8 +1,7 @@
 # Telegram Storage
 
 Telegram cloud client. You need a channel (name or ID) in which your bot has full administrator
-rights.  
-**Do not change the channel description!** The bot stores the keystore identifier in the channel
+rights. Do not change the channel description! The bot stores the keystore identifier in the channel
 description.
 
 ## Download
