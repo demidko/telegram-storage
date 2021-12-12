@@ -11,7 +11,7 @@ You need Gradle, or Maven, or other build tool.
 
 [![](https://jitpack.io/v/demidko/telegram-storage.svg)](https://jitpack.io/#demidko/telegram-storage)
 
-Also, you need add Kotlin serialization plugin, for example, in _build.gradle.kts_
+Also, you need to add Kotlin serialization plugin, for example, in _build.gradle.kts_
 ```kotlin
 plugins {
     kotlin("plugin.serialization") version "1.6.0"
