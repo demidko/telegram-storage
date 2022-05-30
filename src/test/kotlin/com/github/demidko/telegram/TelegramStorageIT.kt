@@ -21,7 +21,7 @@ class TelegramStorageIT {
   @BeforeEach
   fun openChannelStorage() {
     val botToken = getenv("BOT_TOKEN")
-    val channelName = getenv("CHANNEL_ID").toLong()
+    val channelName = getenv("CHANNEL_NAME")
     storage = TelegramStorage(botToken, channelName)
   }
 
