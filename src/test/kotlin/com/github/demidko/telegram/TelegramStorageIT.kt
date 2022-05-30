@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test
 import java.lang.System.getenv
 
 /**
- * You need provide BOT_TOKEN and CHANNEL_ID environment variables for IT test
+ * You need provide BOT_TOKEN and CHANNEL_NAME environment variables for IT test
  */
 class TelegramStorageIT {
 
