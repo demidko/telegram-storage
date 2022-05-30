@@ -13,7 +13,7 @@ You need Gradle, or Maven, or other build tool.
 Also, you need to add Kotlin serialization plugin, for example, in _build.gradle.kts_
 ```kotlin
 plugins {
-    kotlin("plugin.serialization") version "1.6.0"
+    kotlin("plugin.serialization") version "1.7.0-RC"
 }
 ```
 
