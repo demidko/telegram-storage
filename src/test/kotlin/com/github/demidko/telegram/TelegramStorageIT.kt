@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test
 import java.lang.System.getenv
 
 /**
- * You need provide BOT_TOKEN and CHANNEL_NAME environment variables for IT test
+ * You need provide BOT_TOKEN and CHANNEL_ID environment variables for IT test
  */
 class TelegramStorageIT {
 
@@ -21,7 +21,7 @@ class TelegramStorageIT {
   @BeforeEach
   fun openChannelStorage() {
     val botToken = getenv("BOT_TOKEN")
-    val channelName = getenv("CHANNEL_NAME")
+    val channelName = getenv("CHANNEL_ID").toLong()
     storage = TelegramStorage(botToken, channelName)
   }
 
