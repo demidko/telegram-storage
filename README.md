@@ -17,23 +17,22 @@ plugins {
 }
 ```
 
-
 ## Usage example
 
 ```kotlin
-import kotlinx.serialization.Serializable
-
-import java.lang.System.getenv
 import com.github.demidko.telegram.*
+import kotlinx.serialization.Serializable
 
 @Serializable
 data class People(val name: String, val address: String)
 
 fun main() {
-    val botToken = "Example Telegram Bot API access token"
-    val channelName = "@example_channel_name" // You can also use channel id
-    val storage = TelegramStorage<People>(botToken, channelName)
+    val token = "Example Telegram Bot API access token"
+    val channel = "Example channel name or numeric id"
+    val storage = TelegramStorage<People>(token, channel)
+
     storage["id"] = People("Elon Musk", "Texas")
-    val restoredObject: People = storage["id"] // People("Elon Musk", "Texas")
+
+    val obj: People = storage["id"] // People("Elon Musk", "Texas")
 }
 ```
