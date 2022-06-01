@@ -2,6 +2,7 @@ package com.github.demidko.telegram
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import com.github.demidko.telegram.experimental.TelegramMap
 import kotlinx.serialization.Serializable
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -16,13 +17,13 @@ class TelegramStorageIT {
   @Serializable
   data class People(val name: String, val address: String)
 
-  lateinit var storage: TelegramStorage<People>
+  lateinit var storage: TelegramMap<String, People>
 
   @BeforeEach
   fun openChannelStorage() {
     val botToken = getenv("BOT_TOKEN")
     val channelName = getenv("CHANNEL_NAME")
-    storage = TelegramStorage(botToken, channelName)
+    storage = TelegramMap(botToken, channelName)
   }
 
   @AfterEach
@@ -37,7 +38,6 @@ class TelegramStorageIT {
 
   @Test
   fun testDownload() {
-    assertThat(storage.get<People>("id"))
-      .isEqualTo(People("Elon Musk", "Texas"))
+    assertThat(storage["id"]).isEqualTo(People("Elon Musk", "Texas"))
   }
 }
