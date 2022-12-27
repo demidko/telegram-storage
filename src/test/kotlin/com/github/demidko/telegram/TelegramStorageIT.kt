@@ -16,7 +16,7 @@ class TelegramStorageIT {
   @Serializable
   data class People(val name: String, val address: String)
 
-  lateinit var storage: TelegramStorage
+  private lateinit var storage: TelegramStorage
 
   @BeforeEach
   fun openChannelStorage() {
