@@ -20,7 +20,7 @@ import java.io.Closeable
  * Use [fromId] or [fromChannelUsername]. The [bot] must be admin of this channel.
  * Do not change the channel description and files in this channel!
  */
-class TelegramStorage<T>(private val bot: Bot, private val channel: ChatId) : Closeable {
+class TelegramStorage(private val bot: Bot, private val channel: ChatId) : Closeable {
 
   /**
    * Low-level API.
@@ -34,11 +34,11 @@ class TelegramStorage<T>(private val bot: Bot, private val channel: ChatId) : Cl
   /**
    * @param v see [Telegram Bot API limits](https://core.telegram.org/bots/faq#handling-media)
    */
-  inline operator fun <reified V : T> set(k: String, v: V) {
+  inline operator fun <reified V> set(k: String, v: V) {
     bytes[k] = Cbor.encodeToByteArray(v)
   }
 
-  inline operator fun <reified V : T> get(k: String): V? {
+  inline operator fun <reified V> get(k: String): V? {
     val bytes = bytes[k] ?: return null
     return Cbor.decodeFromByteArray<V>(bytes)
   }

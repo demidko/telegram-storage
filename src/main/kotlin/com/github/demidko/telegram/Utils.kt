@@ -15,7 +15,7 @@ import kotlinx.serialization.Serializable
  * The bot([botToken]) must be admin of this channel.
  * Do not change the channel description and files in this channel!
  */
-fun <T> TelegramStorage(botToken: String, channelName: String): TelegramStorage<T> {
+fun TelegramStorage(botToken: String, channelName: String): TelegramStorage {
   val bot = bot { token = botToken }
   val channel = ChatId.fromChannelUsername(channelName)
   return TelegramStorage(bot, channel)
@@ -30,7 +30,7 @@ fun <T> TelegramStorage(botToken: String, channelName: String): TelegramStorage<
  * The bot([botToken]) must be admin of this channel.
  * Do not change the channel description and files in this channel!
  */
-fun <T> TelegramStorage(botToken: String, channelId: Long): TelegramStorage<T> {
+fun TelegramStorage(botToken: String, channelId: Long): TelegramStorage {
   val bot = bot { token = botToken }
   val channel = ChatId.fromId(channelId)
   return TelegramStorage(bot, channel)

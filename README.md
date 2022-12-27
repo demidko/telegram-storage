@@ -6,14 +6,14 @@ description.
 
 ## Download
 
-_Supports Kotlin 1.7.0-RC and higher._ You need Gradle, or Maven, or other build tool. 
+_Supports Kotlin 1.8.0-RC2 and higher._ You need Gradle, or Maven, or other build tool. 
 
 [![](https://jitpack.io/v/demidko/telegram-storage.svg)](https://jitpack.io/#demidko/telegram-storage)
 
 Also, you need to add Kotlin serialization plugin, for example, in _build.gradle.kts_
 ```kotlin
 plugins {
-    kotlin("plugin.serialization") version "1.7.0-RC"
+    kotlin("plugin.serialization") version "1.8.0-RC2"
 }
 ```
 
