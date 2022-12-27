@@ -14,7 +14,11 @@ import java.lang.System.getenv
 class TelegramStorageIT {
 
   @Serializable
-  data class People(val name: String, val address: String)
+  data class People(
+    val name: String,
+    val address: String,
+    val bankIdToMoney: Map<Long, Long>
+  )
 
   private lateinit var storage: TelegramStorage
 
@@ -32,12 +36,12 @@ class TelegramStorageIT {
 
   @Test
   fun testSave() {
-    storage["id"] = People("Elon Musk", "Texas")
+    storage["id"] = People("Elon Musk", "Texas", mapOf(1L to 100L))
   }
 
   @Test
   fun testDownload() {
     assertThat(storage.get<People>("id"))
-      .isEqualTo(People("Elon Musk", "Texas"))
+      .isEqualTo(People("Elon Musk", "Texas", mapOf(1L to 100L)))
   }
 }
