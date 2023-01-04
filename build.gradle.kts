@@ -1,3 +1,5 @@
+@file:Suppress("VulnerableLibrariesLocal")
+
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 repositories {
@@ -7,8 +9,8 @@ repositories {
 plugins {
   `java-library`
   `maven-publish`
-  kotlin("jvm") version "1.8.0-RC2"
-  kotlin("plugin.serialization") version "1.8.0-RC2"
+  kotlin("jvm") version "1.8.0"
+  kotlin("plugin.serialization") version "1.8.0"
 }
 dependencies {
   api("io.github.kotlin-telegram-bot.kotlin-telegram-bot:telegram:6.0.7")

@@ -13,7 +13,7 @@ _Supports Kotlin 1.8.0-RC2 and higher._ You need Gradle, or Maven, or other buil
 Also, you need to add Kotlin serialization plugin, for example, in _build.gradle.kts_
 ```kotlin
 plugins {
-    kotlin("plugin.serialization") version "1.8.0-RC2"
+    kotlin("plugin.serialization") version "1.8.0"
 }
 ```
 
