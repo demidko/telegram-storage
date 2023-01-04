@@ -6,7 +6,7 @@ description.
 
 ## Download
 
-_Supports Kotlin 1.8.0-RC2 and higher._ You need Gradle, or Maven, or other build tool. 
+_Supports Kotlin 1.8.0 and higher._ You need Gradle, or Maven, or other build tool. 
 
 [![](https://jitpack.io/v/demidko/telegram-storage.svg)](https://jitpack.io/#demidko/telegram-storage)
 
