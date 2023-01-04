@@ -57,6 +57,8 @@ class BytesTelegramStorage(private val bot: Bot, private val channel: ChatId) : 
 
   fun remove(k: String) = atomicExecutor.submit { keyToTelegramFileId.remove(k) }
 
+  val keys get() = keyToTelegramFileId.keys
+
   /**
    * Save your binary value
    * @param k key to value

@@ -1,4 +1,4 @@
-@file:Suppress("VulnerableLibrariesLocal")
+@file:Suppress("VulnerableLibrariesLocal", "SpellCheckingInspection")
 
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 

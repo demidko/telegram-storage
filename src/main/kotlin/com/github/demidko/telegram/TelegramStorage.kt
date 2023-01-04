@@ -13,7 +13,6 @@ import java.io.Closeable
 /**
  * Immutable nosql database in your Telegram channel.
  *
- * @param T storable value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable]
  * @param bot Telegram bot.
  * See [documentation](https://github.com/kotlin-telegram-bot/kotlin-telegram-bot)
  * @param channel Telegram channel. Channel description must be empty!
@@ -29,9 +28,13 @@ class TelegramStorage(private val bot: Bot, private val channel: ChatId) : Close
 
   val size get() = bytes.size
 
+  val keys get() = bytes.keys
+
   fun remove(k: Any) = bytes.remove(k.toString())
 
   /**
+   * @param k `k.toString()` will be used as key
+   * @param V storable value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable]
    * @param v see [Telegram Bot API limits](https://core.telegram.org/bots/faq#handling-media)
    */
   inline operator fun <reified V> set(k: Any, v: V) {
