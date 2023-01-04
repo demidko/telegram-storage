@@ -29,7 +29,7 @@ data class People(val name: String, val address: String)
 fun main() {
     val token = "Example Telegram Bot API access token"
     val channel = "Example channel name or numeric id"
-    val storage = TelegramStorage<People>(token, channel)
+    val storage = TelegramStorage(token, channel)
 
     storage["id"] = People("Elon Musk", "Texas")
 

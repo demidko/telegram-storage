@@ -29,17 +29,17 @@ class TelegramStorage(private val bot: Bot, private val channel: ChatId) : Close
 
   val size get() = bytes.size
 
-  fun remove(key: String) = bytes.remove(key)
+  fun remove(k: Any) = bytes.remove(k.toString())
 
   /**
    * @param v see [Telegram Bot API limits](https://core.telegram.org/bots/faq#handling-media)
    */
-  inline operator fun <reified V> set(k: String, v: V) {
-    bytes[k] = Cbor.encodeToByteArray(v)
+  inline operator fun <reified V> set(k: Any, v: V) {
+    bytes[k.toString()] = Cbor.encodeToByteArray(v)
   }
 
-  inline operator fun <reified V> get(k: String): V? {
-    val bytes = bytes[k] ?: return null
+  inline operator fun <reified V> get(k: Any): V? {
+    val bytes = bytes[k.toString()] ?: return null
     return Cbor.decodeFromByteArray<V>(bytes)
   }
 
