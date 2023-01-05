@@ -37,9 +37,7 @@ class TelegramStorage(private val bot: Bot, private val channel: ChatId) : Close
    * @param V storable value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable]
    * @param v see [Telegram Bot API limits](https://core.telegram.org/bots/faq#handling-media)
    */
-  inline operator fun <reified V> set(k: Any, v: V) {
-    bytes[k.toString()] = Cbor.encodeToByteArray(v)
-  }
+  inline operator fun <reified V> set(k: Any, v: V) = bytes.set(k.toString(), Cbor.encodeToByteArray(v))
 
   inline operator fun <reified V> get(k: Any): V? {
     val bytes = bytes[k.toString()] ?: return null
