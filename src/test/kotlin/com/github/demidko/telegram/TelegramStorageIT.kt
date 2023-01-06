@@ -41,7 +41,7 @@ class TelegramStorageIT {
 
   @Test
   fun testDownload() {
-    assertThat(storage.get<People>("id").bankIdToMoney)
+    assertThat(storage.get<People>("id")?.bankIdToMoney)
       .isEqualTo(mapOf(1L to 100L))
   }
 }
