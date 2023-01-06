@@ -14,7 +14,7 @@ import java.lang.System.getenv
 class TelegramStorageIT {
 
   @Serializable
-  class People(
+  data class People(
     val name: String,
     val address: String,
     val bankIdToMoney: Map<Long, Long>
@@ -41,7 +41,7 @@ class TelegramStorageIT {
 
   @Test
   fun testDownload() {
-    assertThat(storage.get<People>("id")?.bankIdToMoney)
-      .isEqualTo(mapOf(1L to 100L))
+    assertThat(storage.get<People>("id"))
+      .isEqualTo(People("Elon Musk", "Texas", mapOf(1L to 100L)))
   }
 }
