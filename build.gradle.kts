@@ -13,14 +13,15 @@ plugins {
   kotlin("plugin.serialization") version "1.8.0"
 }
 dependencies {
-  api("io.github.kotlin-telegram-bot.kotlin-telegram-bot:telegram:6.0.7")
-  api("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.4.1")
+  api("io.github.kotlin-telegram-bot.kotlin-telegram-bot:telegram:6.2.0")
+  api("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.6.0")
   testImplementation("org.junit.jupiter:junit-jupiter:5.9.0")
+  implementation("com.squareup.retrofit2:retrofit:2.11.0")
   testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.25")
   testImplementation("io.mockk:mockk:1.13.2")
 }
 tasks.withType<KotlinCompile>  {
-  kotlinOptions.freeCompilerArgs += "-Xopt-in=kotlinx.serialization.ExperimentalSerializationApi"
+  kotlinOptions.freeCompilerArgs += "-opt-in=kotlinx.serialization.ExperimentalSerializationApi"
 }
 tasks.test {
   useJUnitPlatform()
