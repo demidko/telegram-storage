@@ -35,10 +35,10 @@ data class Person(val name: String, val address: String)
 fun main() {
     val token = "Bot API token here"
     val channel = "Telegram channel name here"
-    val storage = TelegramStorage<Int, Person>(token, channel)
+    val storage = TelegramStorage<String, Person>(token, channel)
     
-    storage[2] = Person("Elon Musk", "Texas") // saved to Telegram channel
+    storage["Special Government Employee"] = Person("Elon Musk", "Texas") // saved to Telegram channel
 
-    val p = storage[2] // restored Person("Elon Musk", "Texas") from channel
+    val p = storage["Special Government Employee"]!! // restored Person("Elon Musk", "Texas") from channel
 }
 ```
