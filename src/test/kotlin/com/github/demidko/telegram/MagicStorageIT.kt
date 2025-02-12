@@ -1,7 +1,6 @@
 package com.github.demidko.telegram
 
-import assertk.assertThat
-import assertk.assertions.isEqualTo
+import com.google.common.truth.Truth.assertThat
 import kotlinx.serialization.Serializable
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
@@ -11,7 +10,7 @@ import java.lang.System.getenv
 /**
  * You need provide BOT_TOKEN and CHANNEL_NAME environment variables for IT test
  */
-class TelegramStorageIT {
+class MagicStorageIT {
 
   @Serializable
   data class People(
@@ -20,13 +19,13 @@ class TelegramStorageIT {
     val bankIdToMoney: Map<Long, Long>
   )
 
-  private lateinit var storage: TelegramStorage
+  private lateinit var storage: MagicStorage<String, People>
 
   @BeforeEach
   fun openChannelStorage() {
     val botToken = getenv("BOT_TOKEN")
     val channelName = getenv("CHANNEL_NAME")
-    storage = TelegramStorage(botToken, channelName)
+    storage = MagicStorage(botToken, channelName)
   }
 
   @AfterEach
