@@ -1,7 +1,7 @@
 # Telegram Storage
 
 This library is your quick `Map<K, V>` in the Telegram channel. Your bot needs a channel (name or ID) with full admin
-rights. Don't change the description—the bot stores key data there.
+rights. Don't change the description—the bot stores important meta there.
 
 ## Download
 
