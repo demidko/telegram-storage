@@ -24,13 +24,8 @@ dependencies {
 }
 kotlin {
   compilerOptions {
-    jvmTarget = JVM_21
     compilerOptions.optIn.add("kotlinx.serialization.ExperimentalSerializationApi")
   }
-}
-java {
-  sourceCompatibility = VERSION_21
-  targetCompatibility = VERSION_21
 }
 tasks.test {
   useJUnitPlatform()
