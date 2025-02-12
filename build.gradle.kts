@@ -1,5 +1,8 @@
 @file:Suppress("VulnerableLibrariesLocal", "SpellCheckingInspection")
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
+
+
 repositories {
   mavenCentral()
   maven("https://jitpack.io")
@@ -20,6 +23,7 @@ dependencies {
 }
 kotlin {
   compilerOptions {
+    jvmTarget = JVM_21
     compilerOptions.optIn.add("kotlinx.serialization.ExperimentalSerializationApi")
   }
 }
