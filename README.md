@@ -24,7 +24,7 @@ plugins {
 ```kotlin
 import com.github.demidko.telegram.*
 import kotlinx.serialization.Serializable
-import com.github.demidko.telegram.TelegramStorage.Companion.newTelegramStorage
+import com.github.demidko.telegram.TelegramStorage.Constructors.newTelegramStorage
 
 @Serializable
 data class Person(val name: String, val address: String)
@@ -36,6 +36,6 @@ fun main() {
 
     storage["id"] = Person("Elon Musk", "Texas") // saved to Telegram channel
 
-    val p: Person = storage["id"] // restored Person("Elon Musk", "Texas") from Telegram channel
+    val p: Person = storage["id"] // restored Person("Elon Musk", "Texas") from channel
 }
 ```

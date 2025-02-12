@@ -15,46 +15,65 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors.newSingleThreadExecutor
 import java.util.concurrent.Future
 
-class TelegramStorage<K, V>(
+/**
+ * Immutable nosql database in your Telegram channel.
+ * @param K key value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
+ * @param V storable value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
+ * Also see [Telegram Bot API limits](https://core.telegram.org/bots/faq#handling-media)
+ */
+class TelegramStorage<K, V> @Deprecated(
+  "This method had to be made public because of weak JVM generics. Don't use it",
+  ReplaceWith(
+    "newTelegramStorage<K, V>(bot, channel)",
+    "com.github.demidko.telegram.TelegramStorage.Constructors.newTelegramStorage"
+  )
+) constructor(
   private val bot: Bot,
   private val channel: ChatId,
   private val keyToTelegramFileId: MutableMap<K, String>
 ) : Closeable {
 
-  companion object {
+  @Suppress("Deprecation")
+  companion object Constructors {
+    /**
+     * Immutable nosql database in your Telegram channel.
+     * @param K key value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
+     * @param V storable value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
+     * Also see [Telegram Bot API limits](https://core.telegram.org/bots/faq#handling-media)
+     * @param botToken Telegram bot token. Must be admin of the [channelName]
+     * @param channelName Telegram channel name. Do not change the channel description or files!
+     */
     inline fun <reified K, V> newTelegramStorage(botToken: String, channelName: String): TelegramStorage<K, V> {
       return newTelegramStorage(bot { token = botToken }, fromChannelUsername(channelName))
     }
 
+    /**
+     * Immutable nosql database in your Telegram channel.
+     * @param K key value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
+     * @param V storable value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
+     * Also see [Telegram Bot API limits](https://core.telegram.org/bots/faq#handling-media)
+     * @param botToken Telegram bot token. Must be admin of the [channelId]
+     * @param channelId Telegram channel ID. Do not change the channel description or files!
+     */
     inline fun <reified K, V> newTelegramStorage(botToken: String, channelId: Long): TelegramStorage<K, V> {
       return newTelegramStorage(bot { token = botToken }, fromId(channelId))
     }
 
     /**
      * Immutable nosql database in your Telegram channel.
-     *
      * @param K key value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
-     *
      * @param V storable value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
      * Also see [Telegram Bot API limits](https://core.telegram.org/bots/faq#handling-media)
-     *
      * @param bot Telegram bot.
      * See [documentation](https://github.com/kotlin-telegram-bot/kotlin-telegram-bot)
-     *
-     * @param channel Telegram channel.
-     * Use [fromId] or [fromChannelUsername]. The [bot] must be admin of this channel.
+     * @param channel Telegram channel. Use [fromId] or [fromChannelUsername]. The [bot] must be admin of this channel.
      * Do not change the channel description or files!
-     *
      */
     inline fun <reified K, V> newTelegramStorage(bot: Bot, channel: ChatId): TelegramStorage<K, V> {
-      val map = readKeysWithTelegramFileIds<K>(bot, channel)
+      val fileId = bot.getChat(channel).get().description ?: return TelegramStorage(bot, channel, ConcurrentHashMap())
+      val bytes = bot.downloadFileBytes(fileId) ?: return TelegramStorage(bot, channel, ConcurrentHashMap())
+      val map = Cbor.decodeFromByteArray<Map<K, String>>(bytes)
       return TelegramStorage(bot, channel, ConcurrentHashMap(map))
-    }
-
-    inline fun <reified K> readKeysWithTelegramFileIds(bot: Bot, channel: ChatId): Map<K, String> {
-      val fileId = bot.getChat(channel).get().description ?: return emptyMap()
-      val bytes = bot.downloadFileBytes(fileId) ?: return emptyMap()
-      return Cbor.decodeFromByteArray<Map<K, String>>(bytes)
     }
   }
 

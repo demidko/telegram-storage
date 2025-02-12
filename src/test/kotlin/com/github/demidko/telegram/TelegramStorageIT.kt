@@ -1,6 +1,6 @@
 package com.github.demidko.telegram
 
-import com.github.demidko.telegram.TelegramStorage.Companion.newTelegramStorage
+import com.github.demidko.telegram.TelegramStorage.Constructors.newTelegramStorage
 import com.google.common.truth.Truth.assertThat
 import kotlinx.serialization.Serializable
 import org.junit.jupiter.api.AfterEach
