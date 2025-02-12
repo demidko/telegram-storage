@@ -36,9 +36,11 @@ fun main() {
     val token = "Bot API token here"
     val channel = "Telegram channel name here"
     val storage = TelegramStorage<String, Person>(token, channel)
-    
-    storage["Special Government Employee"] = Person("Elon Musk", "Texas") // saved to Telegram channel
 
-    val p = storage["Special Government Employee"]!! // restored Person("Elon Musk", "Texas") from channel
+    // saved to Telegram channel
+    storage["Special Government Employee"] = Person("Elon Musk", "Texas")
+
+    // restored Person("Elon Musk", "Texas") from channel
+    val p = storage["Special Government Employee"]!!
 }
 ```
