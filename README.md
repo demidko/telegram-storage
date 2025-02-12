@@ -6,14 +6,17 @@ description.
 
 ## Download
 
-_Supports Kotlin 1.8.0 and higher._ You need Gradle, or Maven, or other build tool. 
+You need Gradle, or Maven, or other build tool
 
 [![](https://jitpack.io/v/demidko/telegram-storage.svg)](https://jitpack.io/#demidko/telegram-storage)
 
-Also, you need to add Kotlin serialization plugin, for example, in _build.gradle.kts_
+Also, you need to
+add [Kotlin serialization plugin](https://plugins.gradle.org/plugin/org.jetbrains.kotlin.plugin.serialization), for
+example, in _build.gradle.kts_
+
 ```kotlin
 plugins {
-    kotlin("plugin.serialization") version "1.8.0"
+    kotlin("plugin.serialization") version "2.1.20-Beta2"
 }
 ```
 
@@ -22,17 +25,18 @@ plugins {
 ```kotlin
 import com.github.demidko.telegram.*
 import kotlinx.serialization.Serializable
+import com.github.demidko.telegram.TelegramStorage.Companion.newTelegramStorage
 
 @Serializable
-data class People(val name: String, val address: String)
+data class Person(val name: String, val address: String)
 
 fun main() {
     val token = "Example Telegram Bot API access token"
     val channel = "Example channel name or numeric id"
-    val storage = TelegramStorage(token, channel)
+    val storage = newTelegramStorage(token, channel)
 
-    storage["id"] = People("Elon Musk", "Texas")
+    storage["id"] = Person("Elon Musk", "Texas") // saved to Telegram channel
 
-    val obj: People = storage["id"] // People("Elon Musk", "Texas")
+    val p: Person = storage["id"] // restored Person("Elon Musk", "Texas") from Telegram channel
 }
 ```

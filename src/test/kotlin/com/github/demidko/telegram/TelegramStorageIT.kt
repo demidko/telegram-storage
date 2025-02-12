@@ -1,5 +1,6 @@
 package com.github.demidko.telegram
 
+import com.github.demidko.telegram.TelegramStorage.Companion.newTelegramStorage
 import com.google.common.truth.Truth.assertThat
 import kotlinx.serialization.Serializable
 import org.junit.jupiter.api.AfterEach
@@ -10,22 +11,22 @@ import java.lang.System.getenv
 /**
  * You need provide BOT_TOKEN and CHANNEL_NAME environment variables for IT test
  */
-class MagicStorageIT {
+class TelegramStorageIT {
 
   @Serializable
-  data class People(
+  data class Person(
     val name: String,
     val address: String,
     val bankIdToMoney: Map<Long, Long>
   )
 
-  private lateinit var storage: MagicStorage<String, People>
+  private lateinit var storage: TelegramStorage<String, Person>
 
   @BeforeEach
   fun openChannelStorage() {
     val botToken = getenv("BOT_TOKEN")
     val channelName = getenv("CHANNEL_NAME")
-    storage = MagicStorage(botToken, channelName)
+    storage = newTelegramStorage(botToken, channelName)
   }
 
   @AfterEach
@@ -35,12 +36,12 @@ class MagicStorageIT {
 
   @Test
   fun testSave() {
-    storage["id"] = People("Elon Musk", "Texas", mapOf(1L to 100L))
+    storage["id"] = Person("Elon Musk", "Texas", mapOf(1L to 100L))
   }
 
   @Test
   fun testDownload() {
-    assertThat(storage.get<People>("id"))
-      .isEqualTo(People("Elon Musk", "Texas", mapOf(1L to 100L)))
+    val person: Person = storage["id"]!!
+    assertThat(person).isEqualTo(Person("Elon Musk", "Texas", mapOf(1L to 100L)))
   }
 }
