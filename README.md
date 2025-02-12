@@ -1,7 +1,12 @@
 # Telegram Storage
 
-This library is your quick `Map<K, V>` in the Telegram channel. Your bot needs a channel (name or ID) with full admin
-rights. Don't change the description—the bot stores important meta there.
+This library is your quick `Map<K, V>` in the Telegram channel. To try it, your bot needs a channel (name or ID) with
+full admin rights.
+
+## Warnings
+
+* Don't change the description—the bot stores the keystore file ID there
+* After the first setup, you can't change the dictionary's key/value types
 
 ## Download
 
@@ -22,8 +27,7 @@ plugins {
 
 ```kotlin
 import com.github.demidko.telegram.*
-import kotlinx.serialization.Serializable
-import com.github.demidko.telegram.TelegramStorage.Constructors.newTelegramStorage
+import com.github.demidko.telegram.TelegramStorage.Constructors.TelegramStorage
 
 @Serializable
 data class Person(val name: String, val address: String)
@@ -31,10 +35,10 @@ data class Person(val name: String, val address: String)
 fun main() {
     val token = "Bot API token here"
     val channel = "Telegram channel name here"
-    val storage = newTelegramStorage<Int, Person>(token, channel)
-
+    val storage = TelegramStorage<Int, Person>(token, channel)
+    
     storage[2] = Person("Elon Musk", "Texas") // saved to Telegram channel
 
-    val p: Person = storage[2] // restored Person("Elon Musk", "Texas") from channel
+    val p = storage[2] // restored Person("Elon Musk", "Texas") from channel
 }
 ```

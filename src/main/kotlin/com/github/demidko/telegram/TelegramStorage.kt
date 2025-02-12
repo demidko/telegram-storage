@@ -6,61 +6,62 @@ import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.ChatId.Companion.fromChannelUsername
 import com.github.kotlintelegrambot.entities.ChatId.Companion.fromId
 import com.github.kotlintelegrambot.entities.TelegramFile.ByByteArray
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.cbor.Cbor
-import kotlinx.serialization.decodeFromByteArray
-import kotlinx.serialization.encodeToByteArray
+import kotlinx.serialization.serializer
 import java.io.Closeable
+import java.io.Serializable
 import java.lang.Runtime.getRuntime
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors.newSingleThreadExecutor
-import java.util.concurrent.Future
 
 /**
- * Immutable nosql database in your Telegram channel.
+ * Immutable NoSQL database in your Telegram channel.
  * @param K key value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
  * @param V storable value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
  * Also see [Telegram Bot API limits](https://core.telegram.org/bots/faq#handling-media)
  */
-class TelegramStorage<K, V> @Deprecated(
-  "This method had to be made public because of weak JVM generics. Don't use it",
-  ReplaceWith(
-    "newTelegramStorage<K, V>(bot, channel)",
-    "com.github.demidko.telegram.TelegramStorage.Constructors.newTelegramStorage"
-  )
-) constructor(
+class TelegramStorage<K, V>(
   private val bot: Bot,
   private val channel: ChatId,
-  private val keyToTelegramFileId: MutableMap<K, String>
+  keySerializer: KSerializer<K>,
+  private val valueSerializer: KSerializer<V>,
 ) : Closeable {
 
-  @Suppress("Deprecation")
   companion object Constructors {
     /**
-     * Immutable nosql database in your Telegram channel.
+     * Immutable NoSQL database in your Telegram channel.
      * @param K key value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
      * @param V storable value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
      * Also see [Telegram Bot API limits](https://core.telegram.org/bots/faq#handling-media)
      * @param botToken Telegram bot token. Must be admin of the [channelName]
      * @param channelName Telegram channel name. Do not change the channel description or files!
      */
-    inline fun <reified K, V> newTelegramStorage(botToken: String, channelName: String): TelegramStorage<K, V> {
-      return newTelegramStorage(bot { token = botToken }, fromChannelUsername(channelName))
+    inline fun <reified K, reified V> TelegramStorage(
+      botToken: String,
+      channelName: String
+    ): TelegramStorage<K, V> {
+      return TelegramStorage(bot { token = botToken }, fromChannelUsername(channelName))
     }
 
     /**
-     * Immutable nosql database in your Telegram channel.
+     * Immutable NoSQL database in your Telegram channel..
      * @param K key value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
      * @param V storable value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
      * Also see [Telegram Bot API limits](https://core.telegram.org/bots/faq#handling-media)
      * @param botToken Telegram bot token. Must be admin of the [channelId]
      * @param channelId Telegram channel ID. Do not change the channel description or files!
      */
-    inline fun <reified K, V> newTelegramStorage(botToken: String, channelId: Long): TelegramStorage<K, V> {
-      return newTelegramStorage(bot { token = botToken }, fromId(channelId))
+    inline fun <reified K, reified V> TelegramStorage(
+      botToken: String,
+      channelId: Long
+    ): TelegramStorage<K, V> {
+      return TelegramStorage(bot { token = botToken }, fromId(channelId))
     }
 
     /**
-     * Immutable nosql database in your Telegram channel.
+     * Immutable NoSQL database in your Telegram channel.
      * @param K key value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
      * @param V storable value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
      * Also see [Telegram Bot API limits](https://core.telegram.org/bots/faq#handling-media)
@@ -69,13 +70,12 @@ class TelegramStorage<K, V> @Deprecated(
      * @param channel Telegram channel. Use [fromId] or [fromChannelUsername]. The [bot] must be admin of this channel.
      * Do not change the channel description or files!
      */
-    inline fun <reified K, V> newTelegramStorage(bot: Bot, channel: ChatId): TelegramStorage<K, V> {
-      val fileId = bot.getChat(channel).get().description ?: return TelegramStorage(bot, channel, ConcurrentHashMap())
-      val bytes = bot.downloadFileBytes(fileId) ?: return TelegramStorage(bot, channel, ConcurrentHashMap())
-      val map = Cbor.decodeFromByteArray<Map<K, String>>(bytes)
-      return TelegramStorage(bot, channel, ConcurrentHashMap(map))
+    inline fun <reified K, reified V> TelegramStorage(bot: Bot, channel: ChatId): TelegramStorage<K, V> {
+      return TelegramStorage(bot, channel, serializer<K>(), serializer<V>())
     }
   }
+
+  private val keystoreSerializer = MapSerializer(keySerializer, serializer<String>())
 
   /**
    * Single thread to safe execution order
@@ -85,57 +85,63 @@ class TelegramStorage<K, V> @Deprecated(
   /**
    * Shutdown handler to save [keyToTelegramFileId] to [channel]
    */
-  private val onShutdown = Thread {
-    atomicExecutor.submit {
-      val map = keyToTelegramFileId.toMap()
-      val telegramFile = Cbor.encodeToByteArray(map).let(::ByByteArray)
-      val fileId = bot.sendDocument(channel, telegramFile).first?.body()?.result?.document?.fileId!!
-      val isSuccessfully = bot.setChatDescription(channel, fileId).first?.isSuccessful!!
-      check(isSuccessfully) { "Can't save file id $fileId" }
-    }.get()
-  }.apply(getRuntime()::addShutdownHook)
+  private val shutdownHook = Thread(::close).apply(getRuntime()::addShutdownHook)
+
+  private val keyToTelegramFileId: ConcurrentHashMap<K, String> = run {
+    val fileId = bot.getChat(channel).get().description ?: return@run ConcurrentHashMap()
+    val bytes = bot.downloadFileBytes(fileId) ?: return@run ConcurrentHashMap()
+    val keys = Cbor.decodeFromByteArray(keystoreSerializer, bytes)
+    ConcurrentHashMap(keys)
+  }
 
   val size get() = keyToTelegramFileId.size
 
-  fun remove(k: K): Future<*>? {
-    return atomicExecutor.submit {
-      keyToTelegramFileId.remove(k)
-    }
-  }
-
   val keys get() = keyToTelegramFileId.keys
 
-  fun setBinaryFuture(k: K, v: ByteArray): Future<*>? {
-    return atomicExecutor.submit {
-      val telegramFile = ByByteArray(v)
+  fun remove(k: K) {
+    val removeFuture = atomicExecutor.submit {
+      keyToTelegramFileId.remove(k)
+    }
+    checkNotNull(removeFuture).get()
+  }
+
+  fun clear() {
+    val destructionFuture = atomicExecutor.submit {
+      keyToTelegramFileId.clear()
+      bot.setChatDescription(channel, "")
+    }
+    checkNotNull(destructionFuture).get()
+  }
+
+  fun isEmpty(): Boolean {
+    return keyToTelegramFileId.isEmpty()
+  }
+
+  operator fun get(k: K): V? {
+    val bytes = keyToTelegramFileId[k]?.let(bot::downloadFileBytes) ?: return null
+    return Cbor.decodeFromByteArray(valueSerializer, bytes)
+  }
+
+  operator fun set(k: K, v: V) {
+    val setValueFuture = atomicExecutor.submit {
+      val telegramFile = ByByteArray(Cbor.encodeToByteArray(valueSerializer, v))
       keyToTelegramFileId[k] = bot.sendDocument(channel, telegramFile).first?.body()?.result?.document?.fileId!!
     }
+    checkNotNull(setValueFuture).get()
   }
 
-  fun setBinary(k: K, v: ByteArray) {
-    checkNotNull(setBinaryFuture(k, v)).get()
-  }
-
-  inline operator fun <reified V1 : V> get(k: K): V1? {
-    val bytes = getBinary(k) ?: return null
-    return Cbor.decodeFromByteArray<V1>(bytes)
-  }
-
-  inline fun <reified V1 : V> setFuture(k: K, v: V1): Future<*>? {
-    return setBinaryFuture(k, Cbor.encodeToByteArray(v))
-  }
-
-  inline operator fun <reified V1 : V> set(k: K, v: V1) {
-    checkNotNull(setFuture(k, v)).get()
-  }
-
-  fun getBinary(k: K): ByteArray? {
-    return keyToTelegramFileId[k]?.let(bot::downloadFileBytes)
+  fun containsKey(k: K): Boolean {
+    return keyToTelegramFileId.containsKey(k)
   }
 
   override fun close() {
-    onShutdown.start()
-    onShutdown.join()
-    getRuntime().removeShutdownHook(onShutdown)
+    val shutdownFuture = atomicExecutor.submit {
+      val telegramFile = Cbor.encodeToByteArray(keystoreSerializer, keyToTelegramFileId).let(::ByByteArray)
+      val fileId = bot.sendDocument(channel, telegramFile).first?.body()?.result?.document?.fileId!!
+      val isSuccessfully = bot.setChatDescription(channel, fileId).first?.isSuccessful!!
+      check(isSuccessfully) { "Can't save file id $fileId" }
+    }
+    checkNotNull(shutdownFuture).get()
+    getRuntime().removeShutdownHook(shutdownHook)
   }
 }

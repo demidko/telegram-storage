@@ -1,17 +1,22 @@
 package com.github.demidko.telegram
 
-import com.github.demidko.telegram.TelegramStorage.Constructors.newTelegramStorage
+import com.github.demidko.telegram.TelegramStorage.Constructors.TelegramStorage
 import com.google.common.truth.Truth.assertThat
 import kotlinx.serialization.Serializable
+import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.lang.System.getenv
 
 /**
- * You need provide BOT_TOKEN and CHANNEL_NAME environment variables for IT test
+ * **You need provide BOT_TOKEN and CHANNEL_NAME environment variables for IT test**
  */
-class TelegramStorageIT {
+object TelegramStorageIT {
+
+  private val botToken = getenv("BOT_TOKEN")
+
+  private val channelName = getenv("CHANNEL_NAME")
 
   @Serializable
   data class Person(
@@ -19,28 +24,31 @@ class TelegramStorageIT {
     val address: String,
   )
 
-  private lateinit var storage: TelegramStorage<Int, Person>
+  private lateinit var employees: TelegramStorage<String, Person>
 
   @BeforeEach
   fun openChannelStorage() {
-    val botToken = getenv("BOT_TOKEN")
-    val channelName = getenv("CHANNEL_NAME")
-    storage = newTelegramStorage(botToken, channelName)
+    employees = TelegramStorage(botToken, channelName)
   }
 
   @AfterEach
   fun closeChannelStorage() {
-    storage.close()
+    employees.close()
   }
 
   @Test
   fun testSave() {
-    storage[2] = Person("Elon Musk", "Texas")
+    employees["Special Government Employee"] = Person("Elon Musk", "Texas")
   }
 
   @Test
   fun testDownload() {
-    val person: Person = storage[2]!!
-    assertThat(person).isEqualTo(Person("Elon Musk", "Texas"))
+    assertThat(employees["Special Government Employee"]!!).isEqualTo(Person("Elon Musk", "Texas"))
+  }
+
+  @AfterAll
+  @JvmStatic
+  fun clearChannelStorage() {
+    employees.clear()
   }
 }
