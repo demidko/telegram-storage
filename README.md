@@ -5,7 +5,7 @@ rights. Don't change the description—the bot stores key data there.
 
 ## Download
 
-You need Gradle, or Maven, or other build tool
+You need Gradle, Maven, or another build tool
 
 [![](https://jitpack.io/v/demidko/telegram-storage.svg)](https://jitpack.io/#demidko/telegram-storage)
 
@@ -29,8 +29,8 @@ import com.github.demidko.telegram.TelegramStorage.Constructors.newTelegramStora
 data class Person(val name: String, val address: String)
 
 fun main() {
-    val token = "Example Telegram Bot API access token"
-    val channel = "Example channel name" // or can be numeric id here
+    val token = "Bot API token here"
+    val channel = "Telegram channel name here"
     val storage = newTelegramStorage<Int, Person>(token, channel)
 
     storage[2] = Person("Elon Musk", "Texas") // saved to Telegram channel
