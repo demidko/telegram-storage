@@ -17,10 +17,9 @@ class TelegramStorageIT {
   data class Person(
     val name: String,
     val address: String,
-    val bankIdToMoney: Map<Long, Long>
   )
 
-  private lateinit var storage: TelegramStorage<String, Person>
+  private lateinit var storage: TelegramStorage<Int, Person>
 
   @BeforeEach
   fun openChannelStorage() {
@@ -36,12 +35,12 @@ class TelegramStorageIT {
 
   @Test
   fun testSave() {
-    storage["id"] = Person("Elon Musk", "Texas", mapOf(1L to 100L))
+    storage[2] = Person("Elon Musk", "Texas")
   }
 
   @Test
   fun testDownload() {
-    val person: Person = storage["id"]!!
-    assertThat(person).isEqualTo(Person("Elon Musk", "Texas", mapOf(1L to 100L)))
+    val person: Person = storage[2]!!
+    assertThat(person).isEqualTo(Person("Elon Musk", "Texas"))
   }
 }

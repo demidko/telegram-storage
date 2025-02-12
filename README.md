@@ -1,8 +1,7 @@
 # Telegram Storage
 
-Telegram cloud client. You need a channel (name or ID) in which your bot has full administrator
-rights. Do not change the channel description! The bot stores the keystore identifier in the channel
-description.
+This library is your quick `Map<K, V>` in the Telegram channel. Your bot needs a channel (name or ID) with full admin
+rights. Don't change the description—the bot stores key data there.
 
 ## Download
 
@@ -31,11 +30,11 @@ data class Person(val name: String, val address: String)
 
 fun main() {
     val token = "Example Telegram Bot API access token"
-    val channel = "Example channel name or numeric id"
-    val storage = newTelegramStorage(token, channel)
+    val channel = "Example channel name" // or can be numeric id here
+    val storage = newTelegramStorage<Int, Person>(token, channel)
 
-    storage["id"] = Person("Elon Musk", "Texas") // saved to Telegram channel
+    storage[2] = Person("Elon Musk", "Texas") // saved to Telegram channel
 
-    val p: Person = storage["id"] // restored Person("Elon Musk", "Texas") from channel
+    val p: Person = storage[2] // restored Person("Elon Musk", "Texas") from channel
 }
 ```
