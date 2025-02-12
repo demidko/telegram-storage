@@ -10,9 +10,8 @@ You need Gradle, or Maven, or other build tool
 
 [![](https://jitpack.io/v/demidko/telegram-storage.svg)](https://jitpack.io/#demidko/telegram-storage)
 
-Also, you need to
-add [Kotlin serialization plugin](https://plugins.gradle.org/plugin/org.jetbrains.kotlin.plugin.serialization), for
-example, in _build.gradle.kts_
+Also, you need to add [Kotlin serialization plugin](https://github.com/Kotlin/kotlinx.serialization), for example, in
+_build.gradle.kts_
 
 ```kotlin
 plugins {
