@@ -1,5 +1,6 @@
 @file:Suppress("VulnerableLibrariesLocal", "SpellCheckingInspection")
 
+import org.gradle.api.JavaVersion.VERSION_21
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21
 
 
@@ -26,6 +27,10 @@ kotlin {
     jvmTarget = JVM_21
     compilerOptions.optIn.add("kotlinx.serialization.ExperimentalSerializationApi")
   }
+}
+java {
+  sourceCompatibility = VERSION_21
+  targetCompatibility = VERSION_21
 }
 tasks.test {
   useJUnitPlatform()
