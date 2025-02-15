@@ -26,7 +26,6 @@ plugins {
 ## Usage example
 
 ```kotlin
-import com.github.demidko.telegram.*
 import com.github.demidko.telegram.TelegramStorage.Constructors.TelegramStorage
 
 @Serializable
