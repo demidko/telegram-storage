@@ -28,8 +28,7 @@ plugins {
 ```kotlin
 import com.github.demidko.telegram.TelegramStorage.Constructors.TelegramStorage
 
-@Serializable
-data class Person(val name: String, val address: String)
+@Serializable data class Person(val name: String, val address: String)
 
 fun main() {
     val token = "Bot API token here"
