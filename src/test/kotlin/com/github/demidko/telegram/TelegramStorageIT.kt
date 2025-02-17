@@ -40,7 +40,7 @@ object TelegramStorageIT {
 
   @Test
   fun testDownload() {
-    assertThat(employees["Special Government Employee"]!!).isEqualTo(Person("Elon Musk", "Texas"))
+    assertThat(employees["Special Government Employee"]).isEqualTo(Person("Elon Musk", "Texas"))
   }
 
   @AfterAll
