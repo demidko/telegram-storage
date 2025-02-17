@@ -133,7 +133,7 @@ class TelegramStorage<K, V>(
       val telegramFile = Cbor.encodeToByteArray(keystoreSerializer, keyToTelegramFileId).let(::ByByteArray)
       val fileId = bot.sendDocument(channel, telegramFile).first?.body()?.result?.document?.fileId!!
       val isSuccessfully = bot.setChatDescription(channel, fileId).first?.isSuccessful!!
-      check(isSuccessfully) { "Can't save file id $fileId" }
+      check(isSuccessfully) { "Can't save keystore id $fileId. Make sure your bot has the right permissions!" }
     }
     checkNotNull(shutdownFuture).get()
     getRuntime().removeShutdownHook(shutdownHook)
