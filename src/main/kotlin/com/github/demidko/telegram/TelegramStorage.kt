@@ -23,8 +23,7 @@ import java.util.concurrent.Executors.newSingleThreadExecutor
  * @param V storable value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
  * @param bot Telegram bot. Must be admin of the [channel].
  * See [documentation](https://github.com/kotlin-telegram-bot/kotlin-telegram-bot)
- * @param channel Telegram channel. Use [fromId] or [fromChannelUsername].
- * Do not change the channel description or files!
+ * @param channel Telegram channel. Use [fromId] or [fromChannelUsername]. Do not change the channel description or files!
  */
 class TelegramStorage<K, V>(
   private val bot: Bot,
@@ -35,7 +34,7 @@ class TelegramStorage<K, V>(
 
   companion object Constructors {
     /**
-     * Immutable NoSQL database in your Telegram channel.
+     * A free, 1M records NoSQL cloud database in your Telegram channel.
      * @param K key value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
      * @param V storable value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
      * Also see [Telegram Bot API limits](https://core.telegram.org/bots/faq#handling-media)
@@ -46,7 +45,7 @@ class TelegramStorage<K, V>(
       TelegramStorage<K, V>(bot { token = botToken }, fromChannelUsername(channelName))
 
     /**
-     * Immutable NoSQL database in your Telegram channel..
+     * A free, 1M records NoSQL cloud database in your Telegram channel.
      * @param K key value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
      * @param V storable value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
      * Also see [Telegram Bot API limits](https://core.telegram.org/bots/faq#handling-media)
@@ -57,7 +56,7 @@ class TelegramStorage<K, V>(
       TelegramStorage<K, V>(bot { token = botToken }, fromId(channelId))
 
     /**
-     * Immutable NoSQL database in your Telegram channel.
+     * A free, 1M records NoSQL cloud database in your Telegram channel.
      * @param K key value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
      * @param V storable value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
      * Also see [Telegram Bot API limits](https://core.telegram.org/bots/faq#handling-media)
