@@ -32,7 +32,7 @@ import com.github.demidko.telegram.TelegramStorage.Constructors.TelegramStorage
 
 fun main() {
     val token = "Bot API token here"
-    val channel = "Telegram channel name here"
+    val channel = "Telegram channel name here" // or long id
     val storage = TelegramStorage<String, Person>(token, channel)
 
     // saved to Telegram channel
