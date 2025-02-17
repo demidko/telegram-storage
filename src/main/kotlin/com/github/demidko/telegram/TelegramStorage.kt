@@ -17,10 +17,14 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors.newSingleThreadExecutor
 
 /**
- * Immutable NoSQL database in your Telegram channel.
+ * A free, 1M records NoSQL cloud database in your Telegram channel.
+ * See [Telegram Bot API limits](https://core.telegram.org/bots/faq#handling-media)
  * @param K key value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
  * @param V storable value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
- * Also see [Telegram Bot API limits](https://core.telegram.org/bots/faq#handling-media)
+ * @param bot Telegram bot. Must be admin of the [channel].
+ * See [documentation](https://github.com/kotlin-telegram-bot/kotlin-telegram-bot)
+ * @param channel Telegram channel. Use [fromId] or [fromChannelUsername].
+ * Do not change the channel description or files!
  */
 class TelegramStorage<K, V>(
   private val bot: Bot,
@@ -38,12 +42,8 @@ class TelegramStorage<K, V>(
      * @param botToken Telegram bot token. Must be admin of the [channelName]
      * @param channelName Telegram channel name. Do not change the channel description or files!
      */
-    inline fun <reified K, reified V> TelegramStorage(
-      botToken: String,
-      channelName: String
-    ): TelegramStorage<K, V> {
-      return TelegramStorage(bot { token = botToken }, fromChannelUsername(channelName))
-    }
+    inline fun <reified K, reified V> TelegramStorage(botToken: String, channelName: String) =
+      TelegramStorage<K, V>(bot { token = botToken }, fromChannelUsername(channelName))
 
     /**
      * Immutable NoSQL database in your Telegram channel..
@@ -53,26 +53,21 @@ class TelegramStorage<K, V>(
      * @param botToken Telegram bot token. Must be admin of the [channelId]
      * @param channelId Telegram channel ID. Do not change the channel description or files!
      */
-    inline fun <reified K, reified V> TelegramStorage(
-      botToken: String,
-      channelId: Long
-    ): TelegramStorage<K, V> {
-      return TelegramStorage(bot { token = botToken }, fromId(channelId))
-    }
+    inline fun <reified K, reified V> TelegramStorage(botToken: String, channelId: Long) =
+      TelegramStorage<K, V>(bot { token = botToken }, fromId(channelId))
 
     /**
      * Immutable NoSQL database in your Telegram channel.
      * @param K key value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
      * @param V storable value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
      * Also see [Telegram Bot API limits](https://core.telegram.org/bots/faq#handling-media)
-     * @param bot Telegram bot.
+     * @param bot Telegram bot. Must be admin of the [channel].
      * See [documentation](https://github.com/kotlin-telegram-bot/kotlin-telegram-bot)
-     * @param channel Telegram channel. Use [fromId] or [fromChannelUsername]. The [bot] must be admin of this channel.
+     * @param channel Telegram channel. Use [fromId] or [fromChannelUsername].
      * Do not change the channel description or files!
      */
-    inline fun <reified K, reified V> TelegramStorage(bot: Bot, channel: ChatId): TelegramStorage<K, V> {
-      return TelegramStorage(bot, channel, serializer<K>(), serializer<V>())
-    }
+    inline fun <reified K, reified V> TelegramStorage(bot: Bot, channel: ChatId) =
+      TelegramStorage<K, V>(bot, channel, serializer<K>(), serializer<V>())
   }
 
   private val keystoreSerializer = MapSerializer(keySerializer, serializer<String>())
