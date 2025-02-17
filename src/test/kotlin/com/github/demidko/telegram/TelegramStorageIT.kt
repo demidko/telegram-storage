@@ -19,10 +19,7 @@ object TelegramStorageIT {
   private val channelName = getenv("CHANNEL_NAME")
 
   @Serializable
-  data class Person(
-    val name: String,
-    val address: String,
-  )
+  data class Person(val name: String, val address: String)
 
   private lateinit var employees: TelegramStorage<String, Person>
 
