@@ -12,7 +12,7 @@ full admin rights.
 
 You need Gradle, Maven, or another build tool
 
-[![](https://jitpack.io/v/demidko/telegram-storage.svg)](https://jitpack.io/#demidko/telegram-storage)
+[![](https://jitpack.io/v/demidko/telegram-storage.svg)](https://jitpack.io/#demidko/telegram-storage/2025.02.15)
 
 Also, you need to add [Kotlin serialization plugin](https://github.com/Kotlin/kotlinx.serialization), for example, in
 _build.gradle.kts_
