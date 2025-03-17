@@ -119,7 +119,11 @@ class TelegramStorage<K, V>(
   operator fun set(k: K, v: V) {
     val setValueFuture = atomicExecutor.submit {
       val telegramFile = ByByteArray(Cbor.encodeToByteArray(valueSerializer, v))
-      keyToTelegramFileId[k] = bot.sendDocument(channel, telegramFile).first?.body()?.result?.document?.fileId!!
+      val (response, exception) = bot.sendDocument(channel, telegramFile)
+      if (exception != null) {
+        throw exception
+      }
+      keyToTelegramFileId[k] = response?.body()?.result?.document?.fileId!!
     }
     checkNotNull(setValueFuture).get()
   }
