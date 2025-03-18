@@ -16,7 +16,8 @@ import java.lang.Runtime.getRuntime
 import java.lang.Thread.currentThread
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors.newSingleThreadExecutor
-import java.util.concurrent.TimeUnit.DAYS
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * A free, 1M records NoSQL cloud database in your Telegram channel.
@@ -78,10 +79,11 @@ class TelegramStorage<K, V>(
    */
   private val atomicExecutor = newSingleThreadExecutor()
 
-  /**
-   * Shutdown handler to save [keyToTelegramFileId] to [channel]
-   */
-  private val shutdownHook = Thread(::close).apply(getRuntime()::addShutdownHook)
+  init {
+    Thread(::close).apply(getRuntime()::addShutdownHook)
+  }
+
+  private val closed = AtomicBoolean(false)
 
   private val keyToTelegramFileId: ConcurrentHashMap<K, String> = run {
     val fileId = bot.getChat(channel).get().description ?: return@run ConcurrentHashMap()
@@ -130,35 +132,35 @@ class TelegramStorage<K, V>(
   }
 
   override fun close() {
-    var terminated: Boolean = atomicExecutor.isTerminated
-    if (terminated) {
-      return
-    }
-    atomicExecutor.submit {
-      val telegramFile = Cbor.encodeToByteArray(keystoreSerializer, keyToTelegramFileId).let(::ByByteArray)
-      val doc = bot.sendDocument(channel, telegramFile).unwrap().document
-      checkNotNull(doc) { "Failed to save keystore. Make sure your bot has the right permissions!" }
-      val isReferenceUpdated = bot.setChatDescription(channel, doc.fileId).unwrap()
-      check(isReferenceUpdated) {
-        "Failed to update the channel description to save keystore reference: ${doc.fileId}. " +
-          "Make sure your bot has the right permissions!"
-      }
-    }.get()
-    getRuntime().removeShutdownHook(shutdownHook)
-    atomicExecutor.shutdown()
-    var interrupted = false
-    while (!terminated) {
-      try {
-        terminated = atomicExecutor.awaitTermination(1L, DAYS)
-      } catch (e: InterruptedException) {
-        if (!interrupted) {
-          atomicExecutor.shutdownNow()
-          interrupted = true
+    if (closed.compareAndSet(false, true)) {
+      atomicExecutor.submit {
+        val telegramFile = Cbor.encodeToByteArray(keystoreSerializer, keyToTelegramFileId).let(::ByByteArray)
+        val doc = bot.sendDocument(channel, telegramFile).unwrap().document
+        checkNotNull(doc) { "Failed to save keystore. Make sure your bot has the right permissions!" }
+        val isReferenceUpdated = bot.setChatDescription(channel, doc.fileId).unwrap()
+        check(isReferenceUpdated) {
+          "Failed to update the channel description to save keystore reference: ${doc.fileId}. " +
+            "Make sure your bot has the right permissions!"
+        }
+      }.get()
+      var terminated: Boolean = atomicExecutor.isTerminated
+      if (!terminated) {
+        atomicExecutor.shutdown()
+        var interrupted = false
+        while (!terminated) {
+          try {
+            terminated = atomicExecutor.awaitTermination(1L, TimeUnit.DAYS)
+          } catch (e: InterruptedException) {
+            if (!interrupted) {
+              atomicExecutor.shutdownNow()
+              interrupted = true
+            }
+          }
+        }
+        if (interrupted) {
+          currentThread().interrupt()
         }
       }
-    }
-    if (interrupted) {
-      currentThread().interrupt()
     }
   }
 }

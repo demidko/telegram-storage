@@ -46,6 +46,7 @@ object TelegramStorageIT {
   @AfterAll
   @JvmStatic
   fun clearChannelStorage() {
+    openChannelStorage()
     employees.clear()
   }
 }
