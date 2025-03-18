@@ -13,8 +13,10 @@ import kotlinx.serialization.serializer
 import java.io.Closeable
 import java.io.Serializable
 import java.lang.Runtime.getRuntime
+import java.lang.Thread.currentThread
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors.newSingleThreadExecutor
+import java.util.concurrent.TimeUnit.DAYS
 
 /**
  * A free, 1M records NoSQL cloud database in your Telegram channel.
@@ -128,6 +130,10 @@ class TelegramStorage<K, V>(
   }
 
   override fun close() {
+    var terminated: Boolean = atomicExecutor.isTerminated
+    if (terminated) {
+      return
+    }
     atomicExecutor.submit {
       val telegramFile = Cbor.encodeToByteArray(keystoreSerializer, keyToTelegramFileId).let(::ByByteArray)
       val doc = bot.sendDocument(channel, telegramFile).unwrap().document
@@ -139,7 +145,21 @@ class TelegramStorage<K, V>(
       }
     }.get()
     getRuntime().removeShutdownHook(shutdownHook)
-    atomicExecutor.close()
+    atomicExecutor.shutdown()
+    var interrupted = false
+    while (!terminated) {
+      try {
+        terminated = atomicExecutor.awaitTermination(1L, DAYS)
+      } catch (e: InterruptedException) {
+        if (!interrupted) {
+          atomicExecutor.shutdownNow()
+          interrupted = true
+        }
+      }
+    }
+    if (interrupted) {
+      currentThread().interrupt()
+    }
   }
 }
 
