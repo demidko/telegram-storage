@@ -47,6 +47,6 @@ object TelegramStorageIT {
   @JvmStatic
   fun clearChannelStorage() {
     openChannelStorage()
-    employees.clear()
+    employees.use(TelegramStorage<String, Person>::clear)
   }
 }

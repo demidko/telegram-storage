@@ -175,7 +175,7 @@ private fun <T> Pair<RetrofitHttpResponse<TelegramApiResponse<T>?>?, Exception?>
   checkNotNull(response) { "Telegram didn't responded" }
   response.errorBody()?.apply { error("Telegram responded HTTP ${response.code()}: ${string() ?: response.message()}") }
   val apiResponse = response.body()
-  checkNotNull(apiResponse) { "Empty Telegram API response with HTTP ${response.code()}: ${response.message()}" }
-  apiResponse.errorCode?.let { error("Telegram API error $it: ${apiResponse.errorDescription}") }
-  return checkNotNull(apiResponse.result) { "Empty Telegram API response" }
+  checkNotNull(apiResponse) { "Telegram responded HTTP ${response.code()}: ${response.message()}" }
+  apiResponse.errorCode?.let { error("Telegram responded API error $it: ${apiResponse.errorDescription}") }
+  return checkNotNull(apiResponse.result) {  "Telegram responded HTTP ${response.code()}: ${response.message()}" }
 }
