@@ -16,7 +16,7 @@ import java.lang.Runtime.getRuntime
 import java.lang.Thread.currentThread
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors.newSingleThreadExecutor
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeUnit.DAYS
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -143,13 +143,13 @@ class TelegramStorage<K, V>(
             "Make sure your bot has the right permissions!"
         }
       }.get()
-      var terminated: Boolean = atomicExecutor.isTerminated
+      var terminated = atomicExecutor.isTerminated
       if (!terminated) {
         atomicExecutor.shutdown()
         var interrupted = false
         while (!terminated) {
           try {
-            terminated = atomicExecutor.awaitTermination(1L, TimeUnit.DAYS)
+            terminated = atomicExecutor.awaitTermination(1L, DAYS)
           } catch (e: InterruptedException) {
             if (!interrupted) {
               atomicExecutor.shutdownNow()
@@ -177,5 +177,5 @@ private fun <T> Pair<RetrofitHttpResponse<TelegramApiResponse<T>?>?, Exception?>
   val apiResponse = response.body()
   checkNotNull(apiResponse) { "Telegram responded HTTP ${response.code()}: ${response.message()}" }
   apiResponse.errorCode?.let { error("Telegram responded API error $it: ${apiResponse.errorDescription}") }
-  return checkNotNull(apiResponse.result) {  "Telegram responded HTTP ${response.code()}: ${response.message()}" }
+  return checkNotNull(apiResponse.result) { "Telegram responded HTTP ${response.code()}: ${response.message()}" }
 }
