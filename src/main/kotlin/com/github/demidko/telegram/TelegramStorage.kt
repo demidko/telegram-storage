@@ -95,16 +95,14 @@ class TelegramStorage<K, V>(
   fun remove(k: K) {
     val removeFuture = atomicExecutor.submit {
       keyToTelegramFileId.remove(k)
-    }
-    checkNotNull(removeFuture).get()
+    }.get()
   }
 
   fun clear() {
     val destructionFuture = atomicExecutor.submit {
       keyToTelegramFileId.clear()
       bot.setChatDescription(channel, "")
-    }
-    checkNotNull(destructionFuture).get()
+    }.get()
   }
 
   fun isEmpty(): Boolean {
@@ -117,15 +115,12 @@ class TelegramStorage<K, V>(
   }
 
   operator fun set(k: K, v: V) {
-    val setValueFuture = atomicExecutor.submit {
+    atomicExecutor.submit {
       val telegramFile = ByByteArray(Cbor.encodeToByteArray(valueSerializer, v))
-      val (response, exception) = bot.sendDocument(channel, telegramFile)
-      if (exception != null) {
-        throw exception
-      }
-      keyToTelegramFileId[k] = response?.body()?.result?.document?.fileId!!
-    }
-    checkNotNull(setValueFuture).get()
+      val doc = bot.sendDocument(channel, telegramFile).unwrap().document
+      checkNotNull(doc) { "Failed to save key $k with value $v. Make sure your bot has the right permissions!" }
+      keyToTelegramFileId[k] = doc.fileId
+    }.get()
   }
 
   fun containsKey(k: K): Boolean {
@@ -133,13 +128,31 @@ class TelegramStorage<K, V>(
   }
 
   override fun close() {
-    val shutdownFuture = atomicExecutor.submit {
+    atomicExecutor.submit {
       val telegramFile = Cbor.encodeToByteArray(keystoreSerializer, keyToTelegramFileId).let(::ByByteArray)
-      val fileId = bot.sendDocument(channel, telegramFile).first?.body()?.result?.document?.fileId!!
-      val isSuccessfully = bot.setChatDescription(channel, fileId).first?.isSuccessful!!
-      check(isSuccessfully) { "Can't save keystore id $fileId. Make sure your bot has the right permissions!" }
-    }
-    checkNotNull(shutdownFuture).get()
+      val doc = bot.sendDocument(channel, telegramFile).unwrap().document
+      checkNotNull(doc) { "Failed to save keystore. Make sure your bot has the right permissions!" }
+      val isReferenceUpdated = bot.setChatDescription(channel, doc.fileId).unwrap()
+      check(isReferenceUpdated) {
+        "Failed to update the channel description to save keystore reference: ${doc.fileId}. " +
+          "Make sure your bot has the right permissions!"
+      }
+    }.get()
     getRuntime().removeShutdownHook(shutdownHook)
   }
+}
+
+private typealias RetrofitHttpResponse<T> = retrofit2.Response<T>
+
+private typealias TelegramApiResponse<T> = com.github.kotlintelegrambot.network.Response<T>
+
+private fun <T> Pair<RetrofitHttpResponse<TelegramApiResponse<T>?>?, Exception?>.unwrap(): T {
+  val (response, exception) = this
+  exception?.let { throw it }
+  checkNotNull(response) { "Telegram didn't responded" }
+  response.errorBody()?.apply { error("Telegram responded HTTP ${response.code()}: ${string() ?: response.message()}") }
+  val apiResponse = response.body()
+  checkNotNull(apiResponse) { "Empty Telegram API response with HTTP ${response.code()}: ${response.message()}" }
+  apiResponse.errorCode?.let { error("Telegram API error $it: ${apiResponse.errorDescription}") }
+  return checkNotNull(apiResponse.result) { "Empty Telegram API response" }
 }
