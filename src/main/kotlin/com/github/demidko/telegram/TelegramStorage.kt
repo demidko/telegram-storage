@@ -139,6 +139,7 @@ class TelegramStorage<K, V>(
       }
     }.get()
     getRuntime().removeShutdownHook(shutdownHook)
+    atomicExecutor.close()
   }
 }
 
