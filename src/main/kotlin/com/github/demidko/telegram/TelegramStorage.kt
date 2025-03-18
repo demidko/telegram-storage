@@ -105,7 +105,7 @@ class TelegramStorage<K, V>(
   fun clear() {
     val destructionFuture = atomicExecutor.submit {
       keyToTelegramFileId.clear()
-      bot.setChatDescription(channel, "")
+      check(bot.setChatDescription(channel, "").unwrap()) { "Failed to clear channel description" }
     }.get()
   }
 
