@@ -1,10 +1,11 @@
 # Telegram Storage
 
-This library is your quick `Map<K, V>` in the Telegram channel. To try it, your bot needs a channel (name or ID) with
+This library is your `Map<K, V>` in the Telegram channel. To try it, your bot needs a channel (name or ID) with
 full admin rights.
 
 ## Warnings
 
+* You can save only 20 entries per minute with a single token. If the limit is exceeded, waiting will occur.
 * Don't change the description—the bot stores the keystore file ID there
 * After the first setup, you can't change the dictionary's key/value types
 

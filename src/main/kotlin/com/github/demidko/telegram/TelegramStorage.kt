@@ -6,6 +6,7 @@ import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.ChatId.Companion.fromChannelUsername
 import com.github.kotlintelegrambot.entities.ChatId.Companion.fromId
 import com.github.kotlintelegrambot.entities.TelegramFile.ByByteArray
+import com.google.common.util.concurrent.RateLimiter
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.cbor.Cbor
@@ -28,6 +29,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * See [documentation](https://github.com/kotlin-telegram-bot/kotlin-telegram-bot)
  * @param channel Telegram channel. Use [fromId] or [fromChannelUsername]. Do not change the channel description or files!
  */
+@Suppress("UnstableApiUsage")
 class TelegramStorage<K, V>(
   private val bot: Bot,
   private val channel: ChatId,
@@ -72,16 +74,18 @@ class TelegramStorage<K, V>(
       TelegramStorage<K, V>(bot, channel, serializer<K>(), serializer<V>())
   }
 
+  init {
+    Thread(::close).apply(getRuntime()::addShutdownHook)
+  }
+
   private val keystoreSerializer = MapSerializer(keySerializer, serializer<String>())
+
+  private val messagesLimiter = RateLimiter.create(0.33)
 
   /**
    * Single thread to safe execution order
    */
   private val atomicExecutor = newSingleThreadExecutor()
-
-  init {
-    Thread(::close).apply(getRuntime()::addShutdownHook)
-  }
 
   private val closed = AtomicBoolean(false)
 
@@ -120,10 +124,12 @@ class TelegramStorage<K, V>(
 
   operator fun set(k: K, v: V) {
     atomicExecutor.submit {
-      val telegramFile = ByByteArray(Cbor.encodeToByteArray(valueSerializer, v))
-      val doc = bot.sendDocument(channel, telegramFile).unwrap().document
-      checkNotNull(doc) { "Failed to save key $k with value $v. Make sure your bot has the right permissions!" }
-      keyToTelegramFileId[k] = doc.fileId
+      val file = ByByteArray(Cbor.encodeToByteArray(valueSerializer, v))
+      messagesLimiter.acquire()
+      val fileId = bot.sendDocument(channel, file).unwrap().document?.fileId
+      keyToTelegramFileId[k] = checkNotNull(fileId) {
+        "Failed to save key $k with value $v. Make sure your bot has the right permissions!"
+      }
     }.get()
   }
 
@@ -135,8 +141,10 @@ class TelegramStorage<K, V>(
     if (closed.compareAndSet(false, true)) {
       atomicExecutor.submit {
         val telegramFile = Cbor.encodeToByteArray(keystoreSerializer, keyToTelegramFileId).let(::ByByteArray)
+        messagesLimiter.acquire()
         val doc = bot.sendDocument(channel, telegramFile).unwrap().document
         checkNotNull(doc) { "Failed to save keystore. Make sure your bot has the right permissions!" }
+        messagesLimiter.acquire()
         val isReferenceUpdated = bot.setChatDescription(channel, doc.fileId).unwrap()
         check(isReferenceUpdated) {
           "Failed to update the channel description to save keystore reference: ${doc.fileId}. " +
