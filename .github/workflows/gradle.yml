@@ -38,3 +38,9 @@ jobs:
           BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
           CHANNEL_NAME: ${{ secrets.CHANNEL_NAME }}
         run: ./gradlew build
+
+      - name: Store report
+        uses: actions/upload-artifact@v4
+        with:
+          name: report.html
+          path: build/reports/tests/test/index.html
