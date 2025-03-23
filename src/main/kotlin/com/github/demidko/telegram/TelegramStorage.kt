@@ -141,6 +141,7 @@ class TelegramStorage<K, V>(
     if (closed.compareAndSet(false, true)) {
       atomicExecutor.submit {
         val telegramFile = Cbor.encodeToByteArray(keystoreSerializer, keyToTelegramFileId).let(::ByByteArray)
+        // todo if more than 20 mb...
         messagesLimiter.acquire()
         val doc = bot.sendDocument(channel, telegramFile).unwrap().document
         checkNotNull(doc) { "Failed to save keystore. Make sure your bot has the right permissions!" }
