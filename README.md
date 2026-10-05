@@ -46,7 +46,14 @@ fun main() {
 
 ## Repeated reads
 
-Reads reuse resolved Telegram download paths for up to 30 minutes, with at most 1,024
+By default, every read resolves metadata through `getFile`, preserving the existing
+metadata checks and failure behavior. Repeated-read workloads can explicitly opt in:
+
+```kotlin
+val storage = TelegramStorage<String, Person>(token, channel, cacheDownloadPaths = true)
+```
+
+When enabled, reads reuse resolved Telegram download paths for up to 30 minutes, with at most 1,024
 paths per storage instance. The cache is keyed by file ID and never stores file contents
 or decoded values: each successful read still downloads and decodes its value.
 [Telegram guarantees download links for at least one hour](https://core.telegram.org/bots/api#getfile).
@@ -55,7 +62,7 @@ Expiry uses a monotonic clock starting before the metadata request. If a cached 
 fails, the storage discards that path and makes one fresh metadata lookup and download
 attempt. Changing a key's file ID uses the new ID; removing a key still makes it absent.
 
-A warm read with a valid download path can succeed during a metadata-only API outage;
+With caching enabled, a warm read with a valid download path can succeed during a metadata-only API outage;
 it does not contact `getFile` until expiry or a failed download. Cold or expired lookups
 still return `null` when metadata resolution fails. This changes metadata-error visibility
 on warm reads, but does not serve cached value data. Writes and close behavior are unchanged.
@@ -66,5 +73,6 @@ on warm reads, but does not serve cached value data. Writes and close behavior a
 The existing destructive integration suite runs only when both variables are nonempty,
 so credentialed upstream CI keeps its coverage. Use a disposable channel when enabling it.
 
-`./gradlew benchmarkReads` compares hot, cold and mixed reads against a local fixture.
+`./gradlew benchmarkReads` measures default reads against a local fixture. Add
+`-PcacheDownloadPaths=true` to measure the opt-in cache on hot, cold and mixed workloads.
 Use `-PpayloadBytes=1048576` for 1 MiB values. See [measurements and limitations](benchmarks/reads.md).

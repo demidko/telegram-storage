@@ -42,5 +42,8 @@ tasks.register<JavaExec>("benchmarkReads") {
   dependsOn(tasks.testClasses)
   classpath = sourceSets.test.get().runtimeClasspath
   mainClass.set("com.github.demidko.telegram.ReadBenchmark")
-  args(providers.gradleProperty("payloadBytes").getOrElse("1024"))
+  args(
+    providers.gradleProperty("payloadBytes").getOrElse("1024"),
+    providers.gradleProperty("cacheDownloadPaths").getOrElse("false"),
+  )
 }

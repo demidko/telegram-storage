@@ -28,13 +28,15 @@ import java.util.concurrent.atomic.AtomicBoolean
  * @param bot Telegram bot. Must be admin of the [channel].
  * See [documentation](https://github.com/kotlin-telegram-bot/kotlin-telegram-bot)
  * @param channel Telegram channel. Use [fromId] or [fromChannelUsername]. Do not change the channel description or files!
+ * @param cacheDownloadPaths opt in to reusing download paths for 30 minutes. Values are always downloaded anew.
  */
 @Suppress("UnstableApiUsage")
-class TelegramStorage<K, V>(
+class TelegramStorage<K, V> @JvmOverloads constructor(
   private val bot: Bot,
   private val channel: ChatId,
   keySerializer: KSerializer<K>,
   private val valueSerializer: KSerializer<V>,
+  cacheDownloadPaths: Boolean = false,
 ) : Closeable {
 
   companion object Constructors {
@@ -43,35 +45,44 @@ class TelegramStorage<K, V>(
      * @param K key value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
      * @param V storable value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
      * Also see [Telegram Bot API limits](https://core.telegram.org/bots/faq#handling-media)
+     * @param cacheDownloadPaths opt in to reusing download paths; disabled by default.
      * @param botToken Telegram bot token. Must be admin of the [channelName]
      * @param channelName Telegram channel name. Do not change the channel description or files!
      */
-    inline fun <reified K, reified V> TelegramStorage(botToken: String, channelName: String) =
-      TelegramStorage<K, V>(bot { token = botToken }, fromChannelUsername(channelName))
+    @JvmOverloads
+    inline fun <reified K, reified V> TelegramStorage(
+      botToken: String, channelName: String, cacheDownloadPaths: Boolean = false,
+    ) = TelegramStorage<K, V>(bot { token = botToken }, fromChannelUsername(channelName), cacheDownloadPaths)
 
     /**
      * A free, 1M records NoSQL cloud database in your Telegram channel.
      * @param K key value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
      * @param V storable value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
      * Also see [Telegram Bot API limits](https://core.telegram.org/bots/faq#handling-media)
+     * @param cacheDownloadPaths opt in to reusing download paths; disabled by default.
      * @param botToken Telegram bot token. Must be admin of the [channelId]
      * @param channelId Telegram channel ID. Do not change the channel description or files!
      */
-    inline fun <reified K, reified V> TelegramStorage(botToken: String, channelId: Long) =
-      TelegramStorage<K, V>(bot { token = botToken }, fromId(channelId))
+    @JvmOverloads
+    inline fun <reified K, reified V> TelegramStorage(
+      botToken: String, channelId: Long, cacheDownloadPaths: Boolean = false,
+    ) = TelegramStorage<K, V>(bot { token = botToken }, fromId(channelId), cacheDownloadPaths)
 
     /**
      * A free, 1M records NoSQL cloud database in your Telegram channel.
      * @param K key value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
      * @param V storable value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
      * Also see [Telegram Bot API limits](https://core.telegram.org/bots/faq#handling-media)
+     * @param cacheDownloadPaths opt in to reusing download paths; disabled by default.
      * @param bot Telegram bot. Must be admin of the [channel].
      * See [documentation](https://github.com/kotlin-telegram-bot/kotlin-telegram-bot)
      * @param channel Telegram channel. Use [fromId] or [fromChannelUsername].
      * Do not change the channel description or files!
      */
-    inline fun <reified K, reified V> TelegramStorage(bot: Bot, channel: ChatId) =
-      TelegramStorage<K, V>(bot, channel, serializer<K>(), serializer<V>())
+    @JvmOverloads
+    inline fun <reified K, reified V> TelegramStorage(
+      bot: Bot, channel: ChatId, cacheDownloadPaths: Boolean = false,
+    ) = TelegramStorage<K, V>(bot, channel, serializer<K>(), serializer<V>(), cacheDownloadPaths)
   }
 
   init {
@@ -96,7 +107,7 @@ class TelegramStorage<K, V>(
     ConcurrentHashMap(keys)
   }
 
-  private val fileDownloader = TelegramFileDownloader(bot)
+  private val fileDownloader = if (cacheDownloadPaths) TelegramFileDownloader(bot) else null
 
   val size get() = keyToTelegramFileId.size
 
@@ -120,7 +131,9 @@ class TelegramStorage<K, V>(
   }
 
   operator fun get(k: K): V? {
-    val bytes = keyToTelegramFileId[k]?.let(fileDownloader::download) ?: return null
+    val bytes = keyToTelegramFileId[k]?.let {
+      if (fileDownloader == null) bot.downloadFileBytes(it) else fileDownloader.download(it)
+    } ?: return null
     return Cbor.decodeFromByteArray(valueSerializer, bytes)
   }
 

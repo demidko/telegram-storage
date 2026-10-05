@@ -61,8 +61,8 @@ internal class FileApiFixture(initialIndex: Map<String, String> = emptyMap()) : 
 
   fun client() = bot { token = "local"; apiUrl = server.url("/").toString() }
 
-  fun <V> open(valueSerializer: KSerializer<V>) =
-    TelegramStorage(client(), ChatId.fromId(1), String.serializer(), valueSerializer)
+  fun <V> open(valueSerializer: KSerializer<V>, cacheDownloadPaths: Boolean = false) =
+    TelegramStorage(client(), ChatId.fromId(1), String.serializer(), valueSerializer, cacheDownloadPaths)
 
   fun put(id: String, bytes: ByteArray, path: String = "$id.cbor") {
     paths[id] = path
