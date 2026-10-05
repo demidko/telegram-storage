@@ -11,6 +11,8 @@ import kotlin.random.Random.Default.nextInt
 /**
  * **You need provide BOT_TOKEN and CHANNEL_NAME environment variables for IT test**
  */
+@org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable(named = "BOT_TOKEN", matches = ".+")
+@org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable(named = "CHANNEL_NAME", matches = ".+")
 @TestMethodOrder(OrderAnnotation::class)
 object TelegramStorageIT {
 
