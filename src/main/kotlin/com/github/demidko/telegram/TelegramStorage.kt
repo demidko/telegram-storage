@@ -96,6 +96,8 @@ class TelegramStorage<K, V>(
     ConcurrentHashMap(keys)
   }
 
+  private val fileDownloader = TelegramFileDownloader(bot)
+
   val size get() = keyToTelegramFileId.size
 
   val keys get() = keyToTelegramFileId.keys
@@ -118,7 +120,7 @@ class TelegramStorage<K, V>(
   }
 
   operator fun get(k: K): V? {
-    val bytes = keyToTelegramFileId[k]?.let(bot::downloadFileBytes) ?: return null
+    val bytes = keyToTelegramFileId[k]?.let(fileDownloader::download) ?: return null
     return Cbor.decodeFromByteArray(valueSerializer, bytes)
   }
 
