@@ -9,7 +9,7 @@ object ReadBenchmark {
   @JvmStatic
   fun main(args: Array<String>) {
     val payloadBytes = args.getOrNull(0)?.toInt() ?: 1024
-    val cacheDownloadPaths = args.getOrNull(1)?.toBooleanStrict() ?: false
+    val cacheDownloadPaths = args.getOrNull(1)?.toBooleanStrict() ?: true
     val expected = "x".repeat(payloadBytes)
     val encoded = Cbor.encodeToByteArray(String.serializer(), expected)
     for (workload in listOf("hot", "cold", "mixed")) {

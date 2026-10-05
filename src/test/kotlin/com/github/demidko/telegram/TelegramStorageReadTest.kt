@@ -18,10 +18,12 @@ class TelegramStorageReadTest {
   private fun bytes(text: String) = Cbor.encodeToByteArray(Value.serializer(), Value(text))
 
   @Test
-  fun `default factory preserves metadata calls and observes metadata errors on repeated reads`() =
+  fun `explicit opt out preserves metadata calls and observes metadata errors on repeated reads`() =
     FileApiFixture(mapOf("key" to "value")).use { api ->
       api.put("value", bytes("original"))
-      TelegramStorage.Constructors.TelegramStorage<String, Value>(api.client(), ChatId.fromId(1)).use { storage ->
+      TelegramStorage.Constructors.TelegramStorage<String, Value>(
+        api.client(), ChatId.fromId(1), cacheDownloadPaths = false,
+      ).use { storage ->
         api.requests.clear()
         assertEquals(Value("original"), storage["key"])
         assertEquals(Value("original"), storage["key"])
@@ -34,11 +36,11 @@ class TelegramStorageReadTest {
     }
 
   @Test
-  fun `explicit factory opt in reuses metadata during a metadata-only outage`() =
+  fun `default factory reuses metadata during a metadata-only outage`() =
     FileApiFixture(mapOf("key" to "value")).use { api ->
       api.put("value", bytes("original"))
       TelegramStorage.Constructors.TelegramStorage<String, Value>(
-        api.client(), ChatId.fromId(1), cacheDownloadPaths = true,
+        api.client(), ChatId.fromId(1),
       ).use { storage ->
         api.requests.clear()
         assertEquals(Value("original"), storage["key"])
@@ -62,7 +64,7 @@ class TelegramStorageReadTest {
       storage.use {
         assertNotNull(it["key"])
         assertNotNull(it["key"])
-        assertEquals(2, api.count("metadata:value"))
+        assertEquals(1, api.count("metadata:value"))
       }
       val factories = TelegramStorage.Constructors::class.java
       assertNotNull(factories.getDeclaredMethod("TelegramStorage", String::class.java, String::class.java))

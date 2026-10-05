@@ -44,6 +44,6 @@ tasks.register<JavaExec>("benchmarkReads") {
   mainClass.set("com.github.demidko.telegram.ReadBenchmark")
   args(
     providers.gradleProperty("payloadBytes").getOrElse("1024"),
-    providers.gradleProperty("cacheDownloadPaths").getOrElse("false"),
+    providers.gradleProperty("cacheDownloadPaths").getOrElse("true"),
   )
 }

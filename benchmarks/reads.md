@@ -1,15 +1,15 @@
 # Download-path cache: behavior and measurements
 
-By default, `TelegramStorage.get` continues to call the dependency's `downloadFileBytes` every time.
+With `cacheDownloadPaths = false`, `TelegramStorage.get` calls the dependency's `downloadFileBytes` every time.
 In kotlin-telegram-bot 6.3.0, that resolves the file with `getFile` and then downloads it:
 [versioned implementation](https://github.com/kotlin-telegram-bot/kotlin-telegram-bot/blob/6.3.0/telegram/src/main/kotlin/com/github/kotlintelegrambot/Bot.kt#L1259).
 The download URL format matches the [official getFile endpoint](https://core.telegram.org/bots/api#getfile),
 which guarantees links for at least one hour and allows resolving a new link when one expires.
 
-The opt-in `cacheDownloadPaths = true` mode reuses only that path. It retains at most 1,024 file-ID/path entries per
+The default `cacheDownloadPaths = true` mode reuses only that path. It retains at most 1,024 file-ID/path entries per
 storage instance, using the already-required Guava cache. No new production dependency
 is introduced. Existing constructor and factory JVM signatures are retained with
-`@JvmOverloads`; the optional Boolean defaults to false. Default instances allocate no cache. Heap usage depends on ID/path string
+`@JvmOverloads`; the optional Boolean defaults to true. Opted-out instances allocate no cache. Heap usage depends on ID/path string
 lengths; this is an entry-count bound, not a fixed byte budget. Value payloads and decoded
 objects are never retained by the cache. Expired entries are cleaned up during cache
 maintenance; there is no timer thread or new shutdown behavior.
@@ -39,8 +39,9 @@ maintenance; there is no timer thread or new shutdown behavior.
   still attempt metadata and can return null. Likewise, removal of metadata alone is not an
   immediate revocation of an already-valid download URL; removal of both returns null. The
   official reuse guarantee supports the success-path optimization, but it does not make the
-  default and enabled metadata-error observations identical. This behavior is explicitly
-  opt-in: the default calls the original SDK helper on every read, including metadata failures.
+  disabled and enabled metadata-error observations identical. Caching is enabled by default;
+  set `cacheDownloadPaths = false` to call the original SDK helper on every read and restore
+  the original metadata failure behavior.
 - `close`, shutdown-hook registration, `set`, `remove` and `clear` are byte-for-byte unchanged
   from upstream. Constructor index loading, persistence ordering, write throttling and
   cross-instance consistency are unchanged. No value caching or write deduplication is added.
@@ -48,8 +49,11 @@ maintenance; there is no timer thread or new shutdown behavior.
 ## Reproduction
 
 The fixture-only baseline commit `0289e7b` retains upstream production code from
-`0bfa8bc544042f3253bc0ed4db7ebe7076653a75`. The results below, measured with production/benchmark commit `2c80267`, compare default-off and
-explicitly enabled modes of the final implementation using exactly the same harness.
+`0bfa8bc544042f3253bc0ed4db7ebe7076653a75`. The results below, measured with production/benchmark commit `2c80267`, compare explicitly disabled and
+enabled modes using exactly the same harness. The subsequent default-on change only changes
+the omitted option value; the explicitly configured paths measured here are unchanged.
+A final no-option `benchmarkReads` run also confirmed `cache_enabled=true` and the same
+request totals (hot 100, cold 200, mixed 120 per 100 reads).
 Use JDK 23 with the repository's Gradle 8.12.1 wrapper, with live credentials unset:
 
 ```sh
@@ -72,7 +76,7 @@ Each workload warms up with 16 reads of eight hot keys, followed by five batches
 Initialization, warmup and close are excluded from the measured region. Constructor and
 close behavior are still executed; every close is checked to make both original write
 requests. Each payload/implementation run uses a fresh JVM. The final recorded runs were
-sequential: default 1 KiB, enabled 1 KiB, default 1 MiB, enabled 1 MiB. No benchmark
+sequential: disabled 1 KiB, enabled 1 KiB, disabled 1 MiB, enabled 1 MiB. No benchmark
 processes competed with each other. The wall-clock date was 2026-10-05, Linux x86_64,
 Eclipse Temurin 23.0.2+7. All 60 batch observations are in [read-results.csv](read-results.csv).
 
@@ -80,7 +84,7 @@ Eclipse Temurin 23.0.2+7. All 60 batch observations are in [read-results.csv](re
 
 Totals for 100 measured reads, identical for both payload sizes; initialization/warmup/close excluded:
 
-| Workload | Default metadata + downloads | Enabled metadata + downloads | HTTP request reduction |
+| Workload | Disabled metadata + downloads | Enabled metadata + downloads | HTTP request reduction |
 | --- | ---: | ---: | ---: |
 | Hot | 100 + 100 | 0 + 100 | 50% |
 | Cold | 100 + 100 | 100 + 100 | 0% |
@@ -93,7 +97,7 @@ within the lifetime and capacity of a storage instance's cache to benefit.
 
 Median of five batch means, milliseconds per read:
 
-| Payload | Workload | Default | Enabled |
+| Payload | Workload | Disabled | Enabled |
 | --- | --- | ---: | ---: |
 | 1 KiB | Hot | 89.474 | 44.385 |
 | 1 KiB | Cold | 88.995 | 88.747 |
@@ -114,8 +118,8 @@ need an additional download attempt and can take longer than the old path.
 Twenty-two local tests pass (15 downloader tests and seven storage integration tests), covering
 expiry, slow resolution, bounded entries, fresh mutable values, replacement/removal, metadata
 outages, missing paths, deleted files, bounded refresh, truncated transfers, concurrent misses,
-concurrent hits and conditional invalidation. Default-mode metadata failures, explicit opt-in
-factory behavior, the original four-argument JVM constructor, and original factory descriptors
+concurrent hits and conditional invalidation. Opt-out metadata failures, default-enabled
+factory and constructor behavior, the original four-argument JVM constructor, and original factory descriptors
 are also covered. An independent read-only review found no issues. Four live integration tests were skipped with
 credentials unset. No real Telegram account, credential or live data was used.
 

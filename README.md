@@ -44,28 +44,38 @@ fun main() {
 }
 ```
 
-## Repeated reads
+## Update: download-path caching is enabled by default
 
-By default, every read resolves metadata through `getFile`, preserving the existing
-metadata checks and failure behavior. Repeated-read workloads can explicitly opt in:
-
-```kotlin
-val storage = TelegramStorage<String, Person>(token, channel, cacheDownloadPaths = true)
-```
-
-When enabled, reads reuse resolved Telegram download paths for up to 30 minutes, with at most 1,024
-paths per storage instance. The cache is keyed by file ID and never stores file contents
-or decoded values: each successful read still downloads and decodes its value.
+Reads now reuse resolved Telegram download paths for up to 30 minutes, with at most
+1,024 paths per storage instance. The cache is keyed by file ID and never stores file
+contents or decoded values: each successful read still downloads and decodes its value.
 [Telegram guarantees download links for at least one hour](https://core.telegram.org/bots/api#getfile).
 
-Expiry uses a monotonic clock starting before the metadata request. If a cached download
-fails, the storage discards that path and makes one fresh metadata lookup and download
-attempt. Changing a key's file ID uses the new ID; removing a key still makes it absent.
+This changes metadata-error visibility: a warm read can succeed while `getFile` is
+unavailable or rejects metadata resolution, provided the previously resolved download
+URL still works. Metadata-only removal does not immediately revoke that URL. Cold or
+expired reads still resolve metadata and can return `null` when resolution fails.
 
-With caching enabled, a warm read with a valid download path can succeed during a metadata-only API outage;
-it does not contact `getFile` until expiry or a failed download. Cold or expired lookups
-still return `null` when metadata resolution fails. This changes metadata-error visibility
-on warm reads, but does not serve cached value data. Writes and close behavior are unchanged.
+To restore the original per-read metadata checks and failure behavior, opt out:
+
+```kotlin
+val storage = TelegramStorage<String, Person>(token, channel, cacheDownloadPaths = false)
+```
+
+The same option is available for channel IDs, bot instances and the serializer-based
+constructor. Existing calls enable caching automatically when upgraded to this version;
+consumers pinned to an older JitPack version retain that version's behavior.
+
+Expiry uses a monotonic clock starting before the metadata request. A failed cached
+download discards that path and permits one fresh metadata lookup and download attempt.
+Changing a key's file ID uses the new ID; removing a key still makes it absent.
+Writes, close and shutdown-hook behavior are unchanged.
+
+In local fixtures, 100 hot reads used 100 HTTP requests instead of 200 (50% fewer);
+an 80%-hot mixed workload used 120 (40% fewer). Cold scans saved no requests. Benefits
+depend on revisiting file IDs within the cache's lifetime and capacity. Failed cached
+reads can need an extra download attempt. These are local request-count results, not
+live Telegram latency guarantees; see [measurements and limitations](benchmarks/reads.md).
 
 ## Local validation
 
@@ -74,5 +84,5 @@ The existing destructive integration suite runs only when both variables are non
 so credentialed upstream CI keeps its coverage. Use a disposable channel when enabling it.
 
 `./gradlew benchmarkReads` measures default reads against a local fixture. Add
-`-PcacheDownloadPaths=true` to measure the opt-in cache on hot, cold and mixed workloads.
+`-PcacheDownloadPaths=false` to measure the original metadata behavior on hot, cold and mixed workloads.
 Use `-PpayloadBytes=1048576` for 1 MiB values. See [measurements and limitations](benchmarks/reads.md).

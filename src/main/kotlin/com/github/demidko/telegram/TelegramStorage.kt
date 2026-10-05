@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * @param bot Telegram bot. Must be admin of the [channel].
  * See [documentation](https://github.com/kotlin-telegram-bot/kotlin-telegram-bot)
  * @param channel Telegram channel. Use [fromId] or [fromChannelUsername]. Do not change the channel description or files!
- * @param cacheDownloadPaths opt in to reusing download paths for 30 minutes. Values are always downloaded anew.
+ * @param cacheDownloadPaths reuse download paths for 30 minutes by default; false restores per-read metadata lookup.
  */
 @Suppress("UnstableApiUsage")
 class TelegramStorage<K, V> @JvmOverloads constructor(
@@ -36,7 +36,7 @@ class TelegramStorage<K, V> @JvmOverloads constructor(
   private val channel: ChatId,
   keySerializer: KSerializer<K>,
   private val valueSerializer: KSerializer<V>,
-  cacheDownloadPaths: Boolean = false,
+  cacheDownloadPaths: Boolean = true,
 ) : Closeable {
 
   companion object Constructors {
@@ -45,13 +45,13 @@ class TelegramStorage<K, V> @JvmOverloads constructor(
      * @param K key value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
      * @param V storable value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
      * Also see [Telegram Bot API limits](https://core.telegram.org/bots/faq#handling-media)
-     * @param cacheDownloadPaths opt in to reusing download paths; disabled by default.
+     * @param cacheDownloadPaths reuse download paths by default; false restores per-read metadata lookup.
      * @param botToken Telegram bot token. Must be admin of the [channelName]
      * @param channelName Telegram channel name. Do not change the channel description or files!
      */
     @JvmOverloads
     inline fun <reified K, reified V> TelegramStorage(
-      botToken: String, channelName: String, cacheDownloadPaths: Boolean = false,
+      botToken: String, channelName: String, cacheDownloadPaths: Boolean = true,
     ) = TelegramStorage<K, V>(bot { token = botToken }, fromChannelUsername(channelName), cacheDownloadPaths)
 
     /**
@@ -59,13 +59,13 @@ class TelegramStorage<K, V> @JvmOverloads constructor(
      * @param K key value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
      * @param V storable value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
      * Also see [Telegram Bot API limits](https://core.telegram.org/bots/faq#handling-media)
-     * @param cacheDownloadPaths opt in to reusing download paths; disabled by default.
+     * @param cacheDownloadPaths reuse download paths by default; false restores per-read metadata lookup.
      * @param botToken Telegram bot token. Must be admin of the [channelId]
      * @param channelId Telegram channel ID. Do not change the channel description or files!
      */
     @JvmOverloads
     inline fun <reified K, reified V> TelegramStorage(
-      botToken: String, channelId: Long, cacheDownloadPaths: Boolean = false,
+      botToken: String, channelId: Long, cacheDownloadPaths: Boolean = true,
     ) = TelegramStorage<K, V>(bot { token = botToken }, fromId(channelId), cacheDownloadPaths)
 
     /**
@@ -73,7 +73,7 @@ class TelegramStorage<K, V> @JvmOverloads constructor(
      * @param K key value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
      * @param V storable value type. Should be [basic](https://kotlinlang.org/docs/basic-types.html) or annotated with [Serializable].
      * Also see [Telegram Bot API limits](https://core.telegram.org/bots/faq#handling-media)
-     * @param cacheDownloadPaths opt in to reusing download paths; disabled by default.
+     * @param cacheDownloadPaths reuse download paths by default; false restores per-read metadata lookup.
      * @param bot Telegram bot. Must be admin of the [channel].
      * See [documentation](https://github.com/kotlin-telegram-bot/kotlin-telegram-bot)
      * @param channel Telegram channel. Use [fromId] or [fromChannelUsername].
@@ -81,7 +81,7 @@ class TelegramStorage<K, V> @JvmOverloads constructor(
      */
     @JvmOverloads
     inline fun <reified K, reified V> TelegramStorage(
-      bot: Bot, channel: ChatId, cacheDownloadPaths: Boolean = false,
+      bot: Bot, channel: ChatId, cacheDownloadPaths: Boolean = true,
     ) = TelegramStorage<K, V>(bot, channel, serializer<K>(), serializer<V>(), cacheDownloadPaths)
   }
 
