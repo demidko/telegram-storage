@@ -1,14 +1,15 @@
 # Download-path cache: behavior and measurements
 
-`TelegramStorage.get` previously called the dependency's `downloadFileBytes` every time.
+By default, `TelegramStorage.get` continues to call the dependency's `downloadFileBytes` every time.
 In kotlin-telegram-bot 6.3.0, that resolves the file with `getFile` and then downloads it:
 [versioned implementation](https://github.com/kotlin-telegram-bot/kotlin-telegram-bot/blob/6.3.0/telegram/src/main/kotlin/com/github/kotlintelegrambot/Bot.kt#L1259).
 The download URL format matches the [official getFile endpoint](https://core.telegram.org/bots/api#getfile),
 which guarantees links for at least one hour and allows resolving a new link when one expires.
 
-The change reuses only that path. It retains at most 1,024 file-ID/path entries per
+The opt-in `cacheDownloadPaths = true` mode reuses only that path. It retains at most 1,024 file-ID/path entries per
 storage instance, using the already-required Guava cache. No new production dependency
-or public constructor signature is introduced. Heap usage depends on ID/path string
+is introduced. Existing constructor and factory JVM signatures are retained with
+`@JvmOverloads`; the optional Boolean defaults to false. Default instances allocate no cache. Heap usage depends on ID/path string
 lengths; this is an entry-count bound, not a fixed byte budget. Value payloads and decoded
 objects are never retained by the cache. Expired entries are cleaned up during cache
 maintenance; there is no timer thread or new shutdown behavior.
@@ -38,29 +39,26 @@ maintenance; there is no timer thread or new shutdown behavior.
   still attempt metadata and can return null. Likewise, removal of metadata alone is not an
   immediate revocation of an already-valid download URL; removal of both returns null. The
   official reuse guarantee supports the success-path optimization, but it does not make the
-  old and new metadata-error observations identical. Applications requiring a metadata check
-  on every read would need an opt-in/default-off variant; this candidate needs that explicit
-  compatibility decision before publication.
+  default and enabled metadata-error observations identical. This behavior is explicitly
+  opt-in: the default calls the original SDK helper on every read, including metadata failures.
 - `close`, shutdown-hook registration, `set`, `remove` and `clear` are byte-for-byte unchanged
   from upstream. Constructor index loading, persistence ordering, write throttling and
   cross-instance consistency are unchanged. No value caching or write deduplication is added.
 
 ## Reproduction
 
-Baseline harness commit `0289e7b` retains upstream production code from
-`0bfa8bc544042f3253bc0ed4db7ebe7076653a75`. Changed production code is in `99733f4`.
-Use JDK 23 with the repository's Gradle 8.12.1 wrapper:
+The fixture-only baseline commit `0289e7b` retains upstream production code from
+`0bfa8bc544042f3253bc0ed4db7ebe7076653a75`. The results below, measured with production/benchmark commit `2c80267`, compare default-off and
+explicitly enabled modes of the final implementation using exactly the same harness.
+Use JDK 23 with the repository's Gradle 8.12.1 wrapper, with live credentials unset:
 
 ```sh
-git worktree add ../telegram-storage-read-baseline 0289e7b
-cd ../telegram-storage-read-baseline
-./gradlew benchmarkReads
-./gradlew benchmarkReads -PpayloadBytes=1048576
-
-cd ../telegram-storage-hot-path
+unset BOT_TOKEN CHANNEL_NAME
 ./gradlew build
-./gradlew benchmarkReads
-./gradlew benchmarkReads -PpayloadBytes=1048576
+./gradlew benchmarkReads -PcacheDownloadPaths=false
+./gradlew benchmarkReads -PcacheDownloadPaths=true
+./gradlew benchmarkReads -PpayloadBytes=1048576 -PcacheDownloadPaths=false
+./gradlew benchmarkReads -PpayloadBytes=1048576 -PcacheDownloadPaths=true
 ```
 
 All HTTP uses a loopback fixture and the dummy token `local`. No artificial response delay
@@ -74,7 +72,7 @@ Each workload warms up with 16 reads of eight hot keys, followed by five batches
 Initialization, warmup and close are excluded from the measured region. Constructor and
 close behavior are still executed; every close is checked to make both original write
 requests. Each payload/implementation run uses a fresh JVM. The final recorded runs were
-sequential: baseline 1 KiB, changed 1 KiB, baseline 1 MiB, changed 1 MiB. No benchmark
+sequential: default 1 KiB, enabled 1 KiB, default 1 MiB, enabled 1 MiB. No benchmark
 processes competed with each other. The wall-clock date was 2026-10-05, Linux x86_64,
 Eclipse Temurin 23.0.2+7. All 60 batch observations are in [read-results.csv](read-results.csv).
 
@@ -82,7 +80,7 @@ Eclipse Temurin 23.0.2+7. All 60 batch observations are in [read-results.csv](re
 
 Totals for 100 measured reads, identical for both payload sizes; initialization/warmup/close excluded:
 
-| Workload | Baseline metadata + downloads | Changed metadata + downloads | HTTP request reduction |
+| Workload | Default metadata + downloads | Enabled metadata + downloads | HTTP request reduction |
 | --- | ---: | ---: | ---: |
 | Hot | 100 + 100 | 0 + 100 | 50% |
 | Cold | 100 + 100 | 100 + 100 | 0% |
@@ -95,14 +93,14 @@ within the lifetime and capacity of a storage instance's cache to benefit.
 
 Median of five batch means, milliseconds per read:
 
-| Payload | Workload | Baseline | Changed |
+| Payload | Workload | Default | Enabled |
 | --- | --- | ---: | ---: |
-| 1 KiB | Hot | 88.758 | 44.789 |
-| 1 KiB | Cold | 88.788 | 88.792 |
-| 1 KiB | Mixed | 89.178 | 53.195 |
-| 1 MiB | Hot | 64.341 | 27.185 |
-| 1 MiB | Cold | 63.911 | 54.220 |
-| 1 MiB | Mixed | 54.846 | 41.357 |
+| 1 KiB | Hot | 89.474 | 44.385 |
+| 1 KiB | Cold | 88.995 | 88.747 |
+| 1 KiB | Mixed | 88.990 | 53.185 |
+| 1 MiB | Hot | 60.598 | 32.232 |
+| 1 MiB | Cold | 71.635 | 73.868 |
+| 1 MiB | Mixed | 47.980 | 40.386 |
 
 These are local HTTP/JVM observations, not live Telegram latency or throughput. They include
 client/server socket behavior, content checks, allocations, JIT and GC effects. In particular,
@@ -113,10 +111,12 @@ need an additional download attempt and can take longer than the old path.
 
 ## Validation
 
-Nineteen local tests pass (15 downloader tests and four storage integration tests), covering
+Twenty-two local tests pass (15 downloader tests and seven storage integration tests), covering
 expiry, slow resolution, bounded entries, fresh mutable values, replacement/removal, metadata
 outages, missing paths, deleted files, bounded refresh, truncated transfers, concurrent misses,
-concurrent hits and conditional invalidation. Four live integration tests were skipped with
+concurrent hits and conditional invalidation. Default-mode metadata failures, explicit opt-in
+factory behavior, the original four-argument JVM constructor, and original factory descriptors
+are also covered. An independent read-only review found no issues. Four live integration tests were skipped with
 credentials unset. No real Telegram account, credential or live data was used.
 
 The cloud environment used `JAVA_HOME=/workspace/tools/jdk-23.0.2+7`,
