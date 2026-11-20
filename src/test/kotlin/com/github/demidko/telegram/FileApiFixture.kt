@@ -25,7 +25,11 @@ internal class FileApiFixture(initialIndex: Map<String, String> = emptyMap()) : 
   val descriptionUpdates = AtomicInteger()
   @Volatile var metadataResponse: ((String) -> MockResponse)? = null
   @Volatile var downloadResponse: ((String) -> MockResponse)? = null
+  @Volatile var descriptionGate: java.util.concurrent.CountDownLatch? = null
+  val descriptionEntered = java.util.concurrent.CountDownLatch(1)
+  @Volatile var failUpload = false
   private val server = MockWebServer()
+  val apiUrl get() = server.url("/").toString()
 
   init {
     put("index", Cbor.encodeToByteArray(MapSerializer(String.serializer(), String.serializer()), initialIndex))
@@ -41,11 +45,14 @@ internal class FileApiFixture(initialIndex: Map<String, String> = emptyMap()) : 
           }
           "/botlocal/sendDocument" -> {
             val id = "uploaded-${uploads.incrementAndGet()}"
+            if (failUpload) return MockResponse().setResponseCode(500)
             put(id, uploadedBytes(request))
             json("""{"message_id":1,"date":0,"chat":{"id":1,"type":"channel"},"document":{"file_id":"$id","file_unique_id":"$id"}}""")
           }
           "/botlocal/setChatDescription" -> {
             descriptionUpdates.incrementAndGet()
+            descriptionEntered.countDown()
+            check(descriptionGate?.await(10, java.util.concurrent.TimeUnit.SECONDS) != false)
             json("true")
           }
           else -> {

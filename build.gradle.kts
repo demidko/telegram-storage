@@ -27,6 +27,7 @@ kotlin {
 }
 tasks.test {
   useJUnitPlatform()
+  systemProperty("test.runtime.classpath", sourceSets.test.get().runtimeClasspath.asPath)
 }
 publishing {
   publications {
